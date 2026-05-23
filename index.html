@@ -4,102 +4,239 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>MeliPlay — Live Prototype</title>
-
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300..700;1,6..72,300..700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
-
   <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
   <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
   <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
-
   <style>
     :root {
-      --paper:  #F5F0E8;
-      --ink:    #0F0F0F;
-      --terra:  #C8522A;
-      --sans:   -apple-system, "SF Pro Text", system-ui, sans-serif;
-      --serif:  "Newsreader", Georgia, serif;
-      --mono:   "JetBrains Mono", ui-monospace, monospace;
+      --paper: #F5F0E8; --terra: #C8522A;
+      --sans:  -apple-system,"SF Pro Text",system-ui,sans-serif;
+      --serif: "Newsreader",Georgia,serif;
+      --mono:  "JetBrains Mono",ui-monospace,monospace;
+      /* theme tokens — defaults: neumorphic · light */
+      --app-bg:      #E4DDD5;
+      --device-bg:   #E4DDD5;
+      --device-sh:   -16px -16px 40px #F4EEE7,16px 16px 40px #BCB6AF,0 0 0 1px rgba(0,0,0,.06);
+      --widget-bg:   #E4DDD5;
+      --widget-sh:   -10px -10px 24px #F4EEE7,10px 10px 24px #BCB6AF;
+      --widget-blur: none;
+      --btn-p-sh:    -5px -5px 12px rgba(255,255,255,.25),5px 5px 12px rgba(140,48,18,.4);
+      --btn-p-psh:   inset -3px -3px 7px rgba(255,255,255,.2),inset 3px 3px 7px rgba(0,0,0,.25);
+      --btn-s-bg:    #E4DDD5;
+      --btn-s-sh:    inset -3px -3px 8px #F4EEE7,inset 3px 3px 8px #BCB6AF;
+      --sheet-bg:    #E4DDD5;
+      --sheet-blur:  none;
+      --search-bg:   #E4DDD5;
+      --search-sh:   inset -3px -3px 8px #F4EEE7,inset 3px 3px 8px #BCB6AF;
+      --row-bg:      #E4DDD5;
+      --row-sh:      -5px -5px 12px #F4EEE7,5px 5px 12px #BCB6AF;
+      --row-ash:     inset -3px -3px 8px #F4EEE7,inset 3px 3px 8px #BCB6AF;
+      --add-bg:      #E4DDD5;
+      --add-sh:      inset -2px -2px 6px #F4EEE7,inset 2px 2px 6px #BCB6AF;
+      --add-ash:     -3px -3px 7px rgba(255,255,255,.2),3px 3px 7px rgba(140,48,18,.4);
+      --dock-bg:     #E4DDD5;
+      --dock-sh:     -8px -8px 20px #F4EEE7,8px 8px 20px #BCB6AF;
+      --dock-blur:   none;
+      --icon-sh:     -4px -4px 10px rgba(255,255,255,.3),4px 4px 10px rgba(0,0,0,.22);
+      --banner-bg:   #2A2520;
+      --ink:         #0F0F0F;
+      --ink-sub:     rgba(15,15,15,.45);
+      --grabber:     rgba(15,15,15,.18);
+      --divider:     rgba(15,15,15,.06);
+      --ri-bg:       rgba(200,82,42,.12);
+      --clr-btn:     rgba(15,15,15,.18);
+      --status-c:    #000000;
+      --icon-label:  #0F0F0F;
+      --home-bar:    rgba(0,0,0,.25);
+      --bd-filter:   brightness(.85);
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body {
-      background: var(--paper);
-      font-family: var(--sans);
-      -webkit-font-smoothing: antialiased;
-      min-height: 100vh;
-      display: flex; align-items: center; justify-content: center;
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body{
+      background:var(--app-bg);font-family:var(--sans);-webkit-font-smoothing:antialiased;
+      min-height:100vh;display:flex;align-items:center;justify-content:center;
+      transition:background .35s ease;
     }
-    #root { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 60px 20px; }
-
-    .press { transition: transform 0.18s cubic-bezier(0.34,1.56,0.64,1); cursor: pointer; user-select: none; }
-    .press:active { transform: scale(0.95); }
-    .no-scrollbar::-webkit-scrollbar { display: none; }
-    .no-scrollbar { scrollbar-width: none; }
-    .anno-label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--terra); font-weight: 600; }
-
-    @keyframes sheetUp    { from { transform: translateY(100%); } to { transform: translateY(0); } }
-    @keyframes pulseSearch {
-      0%,100% { transform: scale(1); }
-      50%      { transform: scale(1.015); box-shadow: 0 0 0 4px rgba(200,82,42,0.08); }
+    #root{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:60px 20px}
+    .no-scrollbar::-webkit-scrollbar{display:none}.no-scrollbar{scrollbar-width:none}
+    @keyframes sheetUp   {from{transform:translateY(100%)}to{transform:translateY(0)}}
+    @keyframes sheetDown {from{transform:translateY(0)}to{transform:translateY(100%)}}
+    @keyframes fadeUpIn  {from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes bannerIn  {0%{transform:translateY(-120%)}70%{transform:translateY(8px)}100%{transform:translateY(0)}}
+    @keyframes bannerOut {from{transform:translateY(0)}to{transform:translateY(-130%)}}
+    @keyframes checkDraw {to{stroke-dashoffset:0}}
+    @keyframes posterFly {
+      0%  {transform:translate(0,0) scale(1);opacity:1}
+      60% {transform:translate(var(--fx,0px),var(--fy,-220px)) scale(.35);opacity:1}
+      100%{transform:translate(var(--fx,0px),var(--fy,-220px)) scale(.35);opacity:0}
     }
-    @keyframes fadeUpIn   { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
-    @keyframes bannerIn   { 0% { transform:translateY(-120%); } 70% { transform:translateY(8px); } 100% { transform:translateY(0); } }
-    @keyframes checkDraw  { to { stroke-dashoffset: 0; } }
-    @keyframes posterFly  {
-      0%   { transform: translate(0,0) scale(1); opacity: 1; }
-      60%  { transform: translate(var(--fx,0px), var(--fy,-220px)) scale(0.35); opacity: 1; }
-      100% { transform: translate(var(--fx,0px), var(--fy,-220px)) scale(0.35); opacity: 0; }
-    }
-    @keyframes shimmerSweep {
-      0%   { transform: translateX(-120%) skewX(-12deg); }
-      100% { transform: translateX(220%)  skewX(-12deg); }
-    }
-    @keyframes badgeIn {
-      from { opacity:0; transform:scale(0.5) translateY(4px); }
-      to   { opacity:1; transform:scale(1)   translateY(0); }
-    }
-    @keyframes ringPing   { 0% { transform:scale(0.6); opacity:0.6; } 100% { transform:scale(2); opacity:0; } }
-    @keyframes bannerOut  { from { transform: translateY(0); } to { transform: translateY(-130%); } }
-    @keyframes sheetDown  { from { transform: translateY(0); } to { transform: translateY(100%); } }
-    @keyframes plusBounce {
-      0%   { transform: scale(1); }
-      35%  { transform: scale(1.45); }
-      65%  { transform: scale(0.82); }
-      100% { transform: scale(1); }
-    }
+    @keyframes shimmerSweep{0%{transform:translateX(-120%) skewX(-12deg)}100%{transform:translateX(220%) skewX(-12deg)}}
+    @keyframes badgeIn {from{opacity:0;transform:scale(.5) translateY(4px)}to{opacity:1;transform:scale(1) translateY(0)}}
+    @keyframes ringPing {0%{transform:scale(.6);opacity:.6}100%{transform:scale(2);opacity:0}}
+    @keyframes plusBounce{0%{transform:scale(1)}35%{transform:scale(1.45)}65%{transform:scale(.82)}100%{transform:scale(1)}}
+    @keyframes pulseSearch{0%,100%{transform:scale(1)}50%{transform:scale(1.015)}}
   </style>
 </head>
 <body>
 <div id="root"></div>
-
 <script type="text/babel">
-const { useState, useEffect, useRef, useCallback } = React;
-
+const { useState, useEffect, useRef, useContext, createContext } = React;
 const TERRA = '#C8522A';
-const INK   = '#0F0F0F';
-
 const OMDB_KEY = 'ab504452';
 
+// ── Theme context ──────────────────────────────────────────────────────────
+const ThemeCtx = createContext({ ink:'#0F0F0F', isDark:false });
+const useTheme = () => useContext(ThemeCtx);
+
+// ── Presets ────────────────────────────────────────────────────────────────
+const PRESETS = {
+  'neuro-light': {
+    '--app-bg':'#E4DDD5','--device-bg':'#E4DDD5',
+    '--device-sh':'-16px -16px 40px #F4EEE7,16px 16px 40px #BCB6AF,0 0 0 1px rgba(0,0,0,.06)',
+    '--widget-bg':'#E4DDD5','--widget-sh':'-10px -10px 24px #F4EEE7,10px 10px 24px #BCB6AF','--widget-blur':'none',
+    '--btn-p-sh':'-5px -5px 12px rgba(255,255,255,.25),5px 5px 12px rgba(140,48,18,.4)',
+    '--btn-p-psh':'inset -3px -3px 7px rgba(255,255,255,.2),inset 3px 3px 7px rgba(0,0,0,.25)',
+    '--btn-s-bg':'#E4DDD5','--btn-s-sh':'inset -3px -3px 8px #F4EEE7,inset 3px 3px 8px #BCB6AF',
+    '--sheet-bg':'#E4DDD5','--sheet-blur':'none',
+    '--search-bg':'#E4DDD5','--search-sh':'inset -3px -3px 8px #F4EEE7,inset 3px 3px 8px #BCB6AF',
+    '--row-bg':'#E4DDD5','--row-sh':'-5px -5px 12px #F4EEE7,5px 5px 12px #BCB6AF',
+    '--row-ash':'inset -3px -3px 8px #F4EEE7,inset 3px 3px 8px #BCB6AF',
+    '--add-bg':'#E4DDD5','--add-sh':'inset -2px -2px 6px #F4EEE7,inset 2px 2px 6px #BCB6AF',
+    '--add-ash':'-3px -3px 7px rgba(255,255,255,.2),3px 3px 7px rgba(140,48,18,.4)',
+    '--dock-bg':'#E4DDD5','--dock-sh':'-8px -8px 20px #F4EEE7,8px 8px 20px #BCB6AF','--dock-blur':'none',
+    '--icon-sh':'-4px -4px 10px rgba(255,255,255,.3),4px 4px 10px rgba(0,0,0,.22)',
+    '--banner-bg':'#2A2520','--ink':'#0F0F0F','--ink-sub':'rgba(15,15,15,.45)',
+    '--grabber':'rgba(15,15,15,.18)','--divider':'rgba(15,15,15,.06)',
+    '--ri-bg':'rgba(200,82,42,.12)','--clr-btn':'rgba(15,15,15,.18)',
+    '--status-c':'#000','--icon-label':'#0F0F0F','--home-bar':'rgba(0,0,0,.25)','--bd-filter':'brightness(.85)',
+    _ink:'#0F0F0F', _dark:false,
+  },
+  'neuro-dark': {
+    '--app-bg':'#2A2520','--device-bg':'#2A2520',
+    '--device-sh':'-16px -16px 40px #3A332D,16px 16px 40px #1A1510,0 0 0 1px rgba(255,255,255,.04)',
+    '--widget-bg':'#2A2520','--widget-sh':'-10px -10px 24px #3A332D,10px 10px 24px #1A1510','--widget-blur':'none',
+    '--btn-p-sh':'-5px -5px 12px rgba(255,255,255,.08),5px 5px 12px rgba(0,0,0,.5)',
+    '--btn-p-psh':'inset -3px -3px 7px rgba(0,0,0,.4),inset 3px 3px 7px rgba(0,0,0,.6)',
+    '--btn-s-bg':'#2A2520','--btn-s-sh':'inset -3px -3px 8px #3A332D,inset 3px 3px 8px #1A1510',
+    '--sheet-bg':'#2A2520','--sheet-blur':'none',
+    '--search-bg':'#2A2520','--search-sh':'inset -3px -3px 8px #3A332D,inset 3px 3px 8px #1A1510',
+    '--row-bg':'#2A2520','--row-sh':'-5px -5px 12px #3A332D,5px 5px 12px #1A1510',
+    '--row-ash':'inset -3px -3px 8px #3A332D,inset 3px 3px 8px #1A1510',
+    '--add-bg':'#2A2520','--add-sh':'inset -2px -2px 6px #3A332D,inset 2px 2px 6px #1A1510',
+    '--add-ash':'-3px -3px 7px rgba(255,255,255,.05),3px 3px 7px rgba(140,48,18,.5)',
+    '--dock-bg':'#2A2520','--dock-sh':'-8px -8px 20px #3A332D,8px 8px 20px #1A1510','--dock-blur':'none',
+    '--icon-sh':'-4px -4px 10px rgba(255,255,255,.05),4px 4px 10px rgba(0,0,0,.5)',
+    '--banner-bg':'#3A332D','--ink':'#F5F0E8','--ink-sub':'rgba(245,240,232,.45)',
+    '--grabber':'rgba(245,240,232,.2)','--divider':'rgba(245,240,232,.08)',
+    '--ri-bg':'rgba(200,82,42,.2)','--clr-btn':'rgba(245,240,232,.2)',
+    '--status-c':'#fff','--icon-label':'#F5F0E8','--home-bar':'rgba(255,255,255,.3)','--bd-filter':'brightness(.55)',
+    _ink:'#F5F0E8', _dark:true,
+  },
+  'glass-light': {
+    '--app-bg':'#D4C0AA','--device-bg':'linear-gradient(170deg,#D8B89A 0%,#C8896B 50%,#A6634A 100%)',
+    '--device-sh':'0 40px 80px rgba(0,0,0,.2),0 0 0 1px rgba(0,0,0,.12)',
+    '--widget-bg':'rgba(255,255,255,.22)','--widget-sh':'0 8px 28px rgba(0,0,0,.1),0 0 0 .5px rgba(255,255,255,.4)','--widget-blur':'blur(20px) saturate(180%)',
+    '--btn-p-sh':'0 3px 10px rgba(200,82,42,.45)','--btn-p-psh':'0 1px 4px rgba(200,82,42,.3)',
+    '--btn-s-bg':'rgba(255,255,255,.25)','--btn-s-sh':'0 1px 4px rgba(0,0,0,.1),0 0 0 .5px rgba(255,255,255,.3)',
+    '--sheet-bg':'rgba(245,240,232,.9)','--sheet-blur':'blur(20px) saturate(180%)',
+    '--search-bg':'rgba(255,255,255,.55)','--search-sh':'0 0 0 1px rgba(255,255,255,.5)',
+    '--row-bg':'rgba(255,255,255,.5)','--row-sh':'0 2px 8px rgba(0,0,0,.06),0 0 0 .5px rgba(255,255,255,.6)',
+    '--row-ash':'0 0 0 1.5px rgba(200,82,42,.4),0 2px 8px rgba(200,82,42,.1)',
+    '--add-bg':'rgba(15,15,15,.08)','--add-sh':'none','--add-ash':'0 3px 10px rgba(200,82,42,.4)',
+    '--dock-bg':'rgba(255,255,255,.18)','--dock-sh':'none','--dock-blur':'blur(20px) saturate(180%)',
+    '--icon-sh':'0 4px 12px rgba(0,0,0,.2)',
+    '--banner-bg':'rgba(10,8,6,.85)','--ink':'#0F0F0F','--ink-sub':'rgba(15,15,15,.45)',
+    '--grabber':'rgba(15,15,15,.18)','--divider':'rgba(15,15,15,.06)',
+    '--ri-bg':'rgba(200,82,42,.12)','--clr-btn':'rgba(15,15,15,.18)',
+    '--status-c':'#000','--icon-label':'rgba(255,255,255,.95)','--home-bar':'rgba(0,0,0,.3)','--bd-filter':'blur(16px) brightness(.55)',
+    _ink:'#0F0F0F', _dark:false,
+  },
+  'glass-dark': {
+    '--app-bg':'#1A100A','--device-bg':'linear-gradient(170deg,#1C1008 0%,#2A1A10 50%,#1C1008 100%)',
+    '--device-sh':'0 40px 80px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.06)',
+    '--widget-bg':'rgba(255,255,255,.08)','--widget-sh':'0 8px 28px rgba(0,0,0,.4),0 0 0 .5px rgba(255,255,255,.12)','--widget-blur':'blur(20px) saturate(180%)',
+    '--btn-p-sh':'0 3px 10px rgba(200,82,42,.5)','--btn-p-psh':'0 1px 4px rgba(200,82,42,.3)',
+    '--btn-s-bg':'rgba(255,255,255,.1)','--btn-s-sh':'0 0 0 .5px rgba(255,255,255,.15)',
+    '--sheet-bg':'rgba(20,14,8,.88)','--sheet-blur':'blur(24px) saturate(180%)',
+    '--search-bg':'rgba(255,255,255,.08)','--search-sh':'0 0 0 1px rgba(255,255,255,.12)',
+    '--row-bg':'rgba(255,255,255,.06)','--row-sh':'0 2px 8px rgba(0,0,0,.2),0 0 0 .5px rgba(255,255,255,.1)',
+    '--row-ash':'0 0 0 1.5px rgba(200,82,42,.5)',
+    '--add-bg':'rgba(255,255,255,.1)','--add-sh':'0 0 0 .5px rgba(255,255,255,.15)','--add-ash':'0 3px 10px rgba(200,82,42,.4)',
+    '--dock-bg':'rgba(255,255,255,.08)','--dock-sh':'none','--dock-blur':'blur(20px)',
+    '--icon-sh':'0 4px 12px rgba(0,0,0,.35)',
+    '--banner-bg':'rgba(245,240,232,.12)','--ink':'#F5F0E8','--ink-sub':'rgba(245,240,232,.45)',
+    '--grabber':'rgba(245,240,232,.2)','--divider':'rgba(245,240,232,.08)',
+    '--ri-bg':'rgba(200,82,42,.2)','--clr-btn':'rgba(245,240,232,.2)',
+    '--status-c':'#fff','--icon-label':'rgba(255,255,255,.95)','--home-bar':'rgba(255,255,255,.3)','--bd-filter':'blur(16px) brightness(.4)',
+    _ink:'#F5F0E8', _dark:true,
+  },
+  'flat-light': {
+    '--app-bg':'#EEE9E2','--device-bg':'#FAFAF8',
+    '--device-sh':'0 24px 64px rgba(0,0,0,.1),0 0 0 1px rgba(0,0,0,.06)',
+    '--widget-bg':'#FFFFFF','--widget-sh':'0 1px 4px rgba(0,0,0,.08),0 0 0 1px rgba(0,0,0,.06)','--widget-blur':'none',
+    '--btn-p-sh':'none','--btn-p-psh':'none',
+    '--btn-s-bg':'#F0ECE6','--btn-s-sh':'none',
+    '--sheet-bg':'#FFFFFF','--sheet-blur':'none',
+    '--search-bg':'#F0ECE6','--search-sh':'none',
+    '--row-bg':'#FFFFFF','--row-sh':'0 1px 3px rgba(0,0,0,.06),0 0 0 1px rgba(0,0,0,.04)',
+    '--row-ash':'0 0 0 1.5px rgba(200,82,42,.4)',
+    '--add-bg':'#F0ECE6','--add-sh':'none','--add-ash':'none',
+    '--dock-bg':'#FFFFFF','--dock-sh':'0 -1px 0 rgba(0,0,0,.06),0 -4px 12px rgba(0,0,0,.04)','--dock-blur':'none',
+    '--icon-sh':'0 2px 6px rgba(0,0,0,.12)',
+    '--banner-bg':'#0F0F0F','--ink':'#0F0F0F','--ink-sub':'rgba(15,15,15,.45)',
+    '--grabber':'rgba(15,15,15,.12)','--divider':'rgba(15,15,15,.07)',
+    '--ri-bg':'rgba(200,82,42,.1)','--clr-btn':'rgba(15,15,15,.12)',
+    '--status-c':'#000','--icon-label':'#0F0F0F','--home-bar':'rgba(0,0,0,.2)','--bd-filter':'brightness(.88)',
+    _ink:'#0F0F0F', _dark:false,
+  },
+  'flat-dark': {
+    '--app-bg':'#0F0C09','--device-bg':'#18140F',
+    '--device-sh':'0 24px 64px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.06)',
+    '--widget-bg':'#222018','--widget-sh':'0 1px 0 rgba(255,255,255,.06)','--widget-blur':'none',
+    '--btn-p-sh':'none','--btn-p-psh':'none',
+    '--btn-s-bg':'#2C2820','--btn-s-sh':'none',
+    '--sheet-bg':'#1E1A14','--sheet-blur':'none',
+    '--search-bg':'#2C2820','--search-sh':'none',
+    '--row-bg':'#222018','--row-sh':'0 1px 0 rgba(255,255,255,.06)',
+    '--row-ash':'0 0 0 1.5px rgba(200,82,42,.5)',
+    '--add-bg':'#2C2820','--add-sh':'none','--add-ash':'none',
+    '--dock-bg':'#222018','--dock-sh':'0 -1px 0 rgba(255,255,255,.06)','--dock-blur':'none',
+    '--icon-sh':'0 2px 6px rgba(0,0,0,.3)',
+    '--banner-bg':'#2C2820','--ink':'#F5F0E8','--ink-sub':'rgba(245,240,232,.4)',
+    '--grabber':'rgba(245,240,232,.15)','--divider':'rgba(245,240,232,.07)',
+    '--ri-bg':'rgba(200,82,42,.2)','--clr-btn':'rgba(245,240,232,.18)',
+    '--status-c':'#fff','--icon-label':'#F5F0E8','--home-bar':'rgba(255,255,255,.25)','--bd-filter':'brightness(.5)',
+    _ink:'#F5F0E8', _dark:true,
+  },
+};
+
+function applyPreset(key) {
+  const p = PRESETS[key];
+  const r = document.documentElement.style;
+  Object.entries(p).forEach(([k,v]) => { if (k.startsWith('--')) r.setProperty(k, v); });
+}
+
 // ── Icons ──────────────────────────────────────────────────────────────────
-function SearchIcon({ size = 17, color = '#000', weight = 2 }) {
+function SearchIcon({ size=17, color='#000', weight=2 }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 18 18" fill="none" style={{ flexShrink:0 }}>
+    <svg width={size} height={size} viewBox="0 0 18 18" fill="none" style={{flexShrink:0}}>
       <circle cx="7.5" cy="7.5" r="5.5" stroke={color} strokeWidth={weight}/>
       <path d="M11.8 11.8L16 16" stroke={color} strokeWidth={weight} strokeLinecap="round"/>
     </svg>
   );
 }
-function PlusIcon({ size = 12, color = '#000' }) {
+function PlusIcon({ size=12, color='#000' }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 12 12" fill="none" style={{ flexShrink:0 }}>
+    <svg width={size} height={size} viewBox="0 0 12 12" fill="none" style={{flexShrink:0}}>
       <path d="M6 1v10M1 6h10" stroke={color} strokeWidth="2" strokeLinecap="round"/>
     </svg>
   );
 }
-function CameraIcon({ size = 15, color = '#000' }) {
+function CameraIcon({ size=15, color='#000' }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 20 16" fill="none" style={{ flexShrink:0 }}>
+    <svg width={size} height={size} viewBox="0 0 20 16" fill="none" style={{flexShrink:0}}>
       <rect x="1" y="3" width="18" height="12" rx="2.5" stroke={color} strokeWidth="1.6"/>
       <circle cx="10" cy="9" r="3.5" stroke={color} strokeWidth="1.6"/>
       <path d="M7 3l1.5-2h3L13 3" stroke={color} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
@@ -109,54 +246,20 @@ function CameraIcon({ size = 15, color = '#000' }) {
 }
 
 // ── MeliMark ───────────────────────────────────────────────────────────────
-function MeliMark({ size = 24, color = INK, dotColor = TERRA }) {
+function MeliMark({ size=24, color='var(--ink)', dotColor=TERRA }) {
   const dot = Math.round(size * 0.22);
   return (
-    <div style={{ display:'inline-flex', alignItems:'flex-end', lineHeight:1 }}>
-      <span style={{ fontFamily:'var(--sans)', fontSize:size, fontWeight:700, color, letterSpacing:'-0.04em', lineHeight:1 }}>Meli</span>
-      <span style={{ fontFamily:'var(--serif)', fontSize:size, fontWeight:400, color, fontStyle:'italic', letterSpacing:'-0.02em', lineHeight:1 }}>Play</span>
-      <span style={{ display:'inline-block', width:dot, height:dot, borderRadius:'50%', background:dotColor, marginLeft:2, marginBottom:Math.round(size*0.08), flexShrink:0 }}/>
+    <div style={{display:'inline-flex',alignItems:'flex-end',lineHeight:1}}>
+      <span style={{fontFamily:'var(--sans)',fontSize:size,fontWeight:700,color,letterSpacing:'-0.04em',lineHeight:1}}>Meli</span>
+      <span style={{fontFamily:'var(--serif)',fontSize:size,fontWeight:400,color,fontStyle:'italic',letterSpacing:'-0.02em',lineHeight:1}}>Play</span>
+      <span style={{display:'inline-block',width:dot,height:dot,borderRadius:'50%',background:dotColor,marginLeft:2,marginBottom:Math.round(size*.08),flexShrink:0}}/>
     </div>
   );
 }
 
 // ── Poster ─────────────────────────────────────────────────────────────────
-const POSTER_PAL = {
-  // Harry Potter — warm amber/magical tones
-  hp1:  { top:'#0C1220', bot:'#1E3460', stripe:'#7090D8' },  // stone — midnight blue
-  hp2:  { top:'#081408', bot:'#164020', stripe:'#40A050' },  // chamber — dark green
-  hp3:  { top:'#0A1018', bot:'#1A2C48', stripe:'#6090C0' },  // azkaban — cold teal
-  hp4:  { top:'#180A02', bot:'#4A1C06', stripe:'#D86020' },  // goblet — fire orange
-  hp5:  { top:'#0E0818', bot:'#28104C', stripe:'#8050C8' },  // phoenix — deep violet
-  hp6:  { top:'#0A1210', bot:'#1C3828', stripe:'#50A070' },  // prince — forest green
-  hp7a: { top:'#141008', bot:'#3C2C14', stripe:'#987040' },  // hallows 1 — muted gold
-  hp7b: { top:'#080808', bot:'#1C1810', stripe:'#B89040' },  // hallows 2 — dark gold
-
-  // Forrest Gump — warm sky/meadow
-  fg:   { top:'#061810', bot:'#0E4828', stripe:'#50C870' },
-
-  // Tony Stark — red & gold Iron Man palette
-  im1:  { top:'#1C0402', bot:'#5C100A', stripe:'#E03018' },
-  im2:  { top:'#1A0604', bot:'#541408', stripe:'#C84020' },
-  av1:  { top:'#040C1C', bot:'#0C2050', stripe:'#4070C8' },
-  im3:  { top:'#1C0402', bot:'#601008', stripe:'#E82010' },
-  av2:  { top:'#0C0618', bot:'#241040', stripe:'#9060D0' },
-  cw:   { top:'#040A1A', bot:'#0C1C44', stripe:'#3868C0' },
-  iw:   { top:'#0A0418', bot:'#1C0C38', stripe:'#7040C0' },
-  eg:   { top:'#0C0A06', bot:'#241E0C', stripe:'#C8A030' },
-
-  // Steve Carell — películas
-  sc_v: { top:'#061014', bot:'#103040', stripe:'#4090B8' },
-  sc_s: { top:'#181002', bot:'#4A3006', stripe:'#D4A020' },
-  sc_l: { top:'#180608', bot:'#4A1018', stripe:'#C04060' },
-
-  // Steve Carell — series
-  sc_o: { top:'#0E1208', bot:'#283818', stripe:'#80A838' },
-  sc_m: { top:'#060A14', bot:'#101C38', stripe:'#3060A8' },
-
-  _def: { top:'#181818', bot:'#404040', stripe:'#888888' },
-};
-function Poster({ movie, size = 56, radius = 6, withGlow = false }) {
+const POSTER_PAL = { _def:{ top:'#181818', bot:'#404040', stripe:'#888888' } };
+function Poster({ movie, size=56, radius=6, withGlow=false }) {
   const pal = POSTER_PAL._def;
   const h   = Math.round(size * 1.5);
   const hasPoster = movie?.poster && movie.poster !== 'N/A';
@@ -165,21 +268,18 @@ function Poster({ movie, size = 56, radius = 6, withGlow = false }) {
       width:size, height:h, borderRadius:radius, flexShrink:0,
       background: hasPoster ? '#111' : `linear-gradient(160deg,${pal.top} 0%,${pal.bot} 100%)`,
       position:'relative', overflow:'hidden',
-      boxShadow: withGlow
-        ? '0 0 0 2px rgba(200,82,42,0.5),0 6px 20px rgba(0,0,0,0.5)'
-        : '0 2px 8px rgba(0,0,0,0.35)',
+      boxShadow: withGlow ? '0 0 0 2px rgba(200,82,42,.5),0 6px 20px rgba(0,0,0,.5)' : '0 2px 8px rgba(0,0,0,.35)',
     }}>
       {hasPoster ? (
-        <img src={movie.poster} alt={movie.title}
-          style={{ width:'100%', height:'100%', objectFit:'cover', display:'block' }}/>
+        <img src={movie.poster} alt={movie.title} style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}}/>
       ) : (
         <>
-          <div style={{ position:'absolute',inset:0, backgroundImage:`repeating-linear-gradient(135deg,transparent 0 8px,${pal.stripe}1A 8px 16px)` }}/>
-          <div style={{ position:'absolute',bottom:0,left:0,right:0,height:'45%', background:`linear-gradient(transparent,${pal.bot}EE)` }}/>
+          <div style={{position:'absolute',inset:0,backgroundImage:`repeating-linear-gradient(135deg,transparent 0 8px,${pal.stripe}1A 8px 16px)`}}/>
+          <div style={{position:'absolute',bottom:0,left:0,right:0,height:'45%',background:`linear-gradient(transparent,${pal.bot}EE)`}}/>
           {size >= 28 && (
-            <div style={{ position:'absolute',bottom:radius*0.7,left:radius*0.7,right:radius*0.7,zIndex:2,
-              fontFamily:'var(--serif)',fontSize:Math.max(5,Math.round(size*0.145)),fontWeight:600,color:'#fff',
-              lineHeight:1.1,textShadow:'0 1px 3px rgba(0,0,0,0.7)',wordBreak:'break-word' }}>
+            <div style={{position:'absolute',bottom:radius*.7,left:radius*.7,right:radius*.7,zIndex:2,
+              fontFamily:'var(--serif)',fontSize:Math.max(5,Math.round(size*.145)),fontWeight:600,color:'#fff',
+              lineHeight:1.1,textShadow:'0 1px 3px rgba(0,0,0,.7)',wordBreak:'break-word'}}>
               {movie?.title}
             </div>
           )}
@@ -191,51 +291,49 @@ function Poster({ movie, size = 56, radius = 6, withGlow = false }) {
 
 // ── Widget ─────────────────────────────────────────────────────────────────
 function Widget({ withBadge=false, shimmer=false, savedMovie=null, pressed=null }) {
+  const { ink } = useTheme();
   return (
-    <div style={{ width:256, borderRadius:24,
-      background:'rgba(255,255,255,0.82)',
-      backdropFilter:'blur(20px) saturate(180%)', WebkitBackdropFilter:'blur(20px) saturate(180%)',
+    <div style={{
+      width:256, borderRadius:24, background:'var(--widget-bg)',
+      backdropFilter:'var(--widget-blur)', WebkitBackdropFilter:'var(--widget-blur)',
       padding:'18px 16px 16px', position:'relative', overflow:'hidden',
-      boxShadow:'0 8px 28px rgba(0,0,0,0.1),0 0 0 0.5px rgba(0,0,0,0.07)' }}>
-
-      {/* shimmer */}
+      boxShadow:'var(--widget-sh)',
+      transition:'background .35s,box-shadow .35s',
+    }}>
       {shimmer && (
-        <div style={{ position:'absolute',inset:0,overflow:'hidden',borderRadius:24,pointerEvents:'none',zIndex:5 }}>
-          <div style={{ position:'absolute',top:0,bottom:0,width:'45%',
-            background:'linear-gradient(90deg,transparent,rgba(200,82,42,0.22) 50%,transparent)',
-            animation:'shimmerSweep 1.4s ease-out 1' }}/>
+        <div style={{position:'absolute',inset:0,overflow:'hidden',borderRadius:24,pointerEvents:'none',zIndex:5}}>
+          <div style={{position:'absolute',top:0,bottom:0,width:'45%',
+            background:'linear-gradient(90deg,transparent,rgba(200,82,42,.22) 50%,transparent)',
+            animation:'shimmerSweep 1.4s ease-out 1'}}/>
         </div>
       )}
-
-      {/* badge */}
       {withBadge && savedMovie && (
-        <div style={{ position:'absolute',top:14,right:14,zIndex:10, animation:'badgeIn 0.45s cubic-bezier(0.34,1.56,0.64,1) both' }}>
+        <div style={{position:'absolute',top:14,right:14,zIndex:10,animation:'badgeIn .45s cubic-bezier(.34,1.56,.64,1) both'}}>
           <Poster movie={savedMovie} size={20} radius={3}/>
         </div>
       )}
-
       <MeliMark size={18} dotColor={TERRA}/>
-      <div style={{ fontFamily:'var(--serif)',fontSize:11.5,fontStyle:'italic',color:'rgba(15,15,15,0.45)',marginTop:3 }}>Tu cine, a mano</div>
-
-      <div style={{ marginTop:18, display:'flex', flexDirection:'column', gap:9 }}>
+      <div style={{fontFamily:'var(--serif)',fontSize:11.5,fontStyle:'italic',color:'var(--ink-sub)',marginTop:3}}>Tu cine, a mano</div>
+      <div style={{marginTop:18,display:'flex',flexDirection:'column',gap:9}}>
         <button data-action="buscar" style={{
-          width:'100%', height:44, borderRadius:12, background:TERRA, border:'none', cursor:'pointer',
-          display:'flex', alignItems:'center', justifyContent:'center', gap:7,
-          fontFamily:'var(--sans)', fontSize:15, fontWeight:600, color:'#fff', letterSpacing:'-0.01em',
-          transform:pressed==='buscar'?'scale(0.95)':'scale(1)',
-          transition:'transform 0.18s cubic-bezier(0.34,1.56,0.64,1)',
-          boxShadow:'0 3px 10px rgba(200,82,42,0.35)',
+          width:'100%',height:44,borderRadius:12,background:TERRA,border:'none',cursor:'pointer',
+          display:'flex',alignItems:'center',justifyContent:'center',gap:7,
+          fontFamily:'var(--sans)',fontSize:15,fontWeight:600,color:'#fff',letterSpacing:'-.01em',
+          transform:pressed==='buscar'?'scale(.97)':'scale(1)',
+          transition:'transform .18s cubic-bezier(.34,1.56,.64,1),box-shadow .18s',
+          boxShadow:pressed==='buscar'?'var(--btn-p-psh)':'var(--btn-p-sh)',
         }}>
           <SearchIcon size={14} color="#fff" weight={2.5}/> Buscar
         </button>
         <button data-action="escanear" style={{
-          width:'100%', height:38, borderRadius:10, background:'rgba(15,15,15,0.07)', border:'none', cursor:'pointer',
-          display:'flex', alignItems:'center', justifyContent:'center', gap:7,
-          fontFamily:'var(--sans)', fontSize:14, fontWeight:500, color:INK, letterSpacing:'-0.01em',
-          transform:pressed==='escanear'?'scale(0.95)':'scale(1)',
-          transition:'transform 0.18s cubic-bezier(0.34,1.56,0.64,1)',
+          width:'100%',height:38,borderRadius:10,background:'var(--btn-s-bg)',border:'none',cursor:'pointer',
+          display:'flex',alignItems:'center',justifyContent:'center',gap:7,
+          fontFamily:'var(--sans)',fontSize:14,fontWeight:500,color:'var(--ink)',letterSpacing:'-.01em',
+          transform:pressed==='escanear'?'scale(.97)':'scale(1)',
+          transition:'transform .18s cubic-bezier(.34,1.56,.64,1)',
+          boxShadow:'var(--btn-s-sh)',
         }}>
-          <CameraIcon size={14} color={INK}/> Escanear
+          <CameraIcon size={14} color={ink}/> Escanear
         </button>
       </div>
     </div>
@@ -243,20 +341,21 @@ function Widget({ withBadge=false, shimmer=false, savedMovie=null, pressed=null 
 }
 
 // ── iOS status bar ─────────────────────────────────────────────────────────
-function IOSStatusBar({ dark = false }) {
-  const c = dark ? '#fff' : '#000';
+function IOSStatusBar() {
+  const { isDark } = useTheme();
+  const c = isDark ? '#fff' : '#000';
   return (
-    <div style={{ display:'flex',gap:154,alignItems:'center',justifyContent:'center',
-      padding:'21px 24px 19px',boxSizing:'border-box',position:'relative',zIndex:20,width:'100%' }}>
-      <div style={{ flex:1,height:22,display:'flex',alignItems:'center',justifyContent:'center',paddingTop:1.5 }}>
-        <span style={{ fontFamily:'-apple-system,"SF Pro",system-ui',fontWeight:590,fontSize:17,lineHeight:'22px',color:c }}>9:41</span>
+    <div style={{display:'flex',alignItems:'center',justifyContent:'center',
+      padding:'21px 24px 19px',boxSizing:'border-box',position:'relative',zIndex:20,width:'100%'}}>
+      <div style={{flex:1,height:22,display:'flex',alignItems:'center',justifyContent:'center',paddingTop:1.5}}>
+        <span style={{fontFamily:'-apple-system,"SF Pro",system-ui',fontWeight:590,fontSize:17,lineHeight:'22px',color:c}}>9:41</span>
       </div>
-      <div style={{ flex:1,height:22,display:'flex',alignItems:'center',justifyContent:'center',gap:7,paddingTop:1,paddingRight:1 }}>
+      <div style={{flex:1,height:22,display:'flex',alignItems:'center',justifyContent:'center',gap:7,paddingTop:1}}>
         <svg width="19" height="12" viewBox="0 0 19 12">
-          <rect x="0"    y="7.5" width="3.2" height="4.5" rx="0.7" fill={c}/>
-          <rect x="4.8"  y="5"   width="3.2" height="7"   rx="0.7" fill={c}/>
-          <rect x="9.6"  y="2.5" width="3.2" height="9.5" rx="0.7" fill={c}/>
-          <rect x="14.4" y="0"   width="3.2" height="12"  rx="0.7" fill={c}/>
+          <rect x="0" y="7.5" width="3.2" height="4.5" rx=".7" fill={c}/>
+          <rect x="4.8" y="5" width="3.2" height="7" rx=".7" fill={c}/>
+          <rect x="9.6" y="2.5" width="3.2" height="9.5" rx=".7" fill={c}/>
+          <rect x="14.4" y="0" width="3.2" height="12" rx=".7" fill={c}/>
         </svg>
         <svg width="17" height="12" viewBox="0 0 17 12">
           <path d="M8.5 3.2C10.8 3.2 12.9 4.1 14.4 5.6L15.5 4.5C13.7 2.7 11.2 1.5 8.5 1.5C5.8 1.5 3.3 2.7 1.5 4.5L2.6 5.6C4.1 4.1 6.2 3.2 8.5 3.2Z" fill={c}/>
@@ -264,9 +363,9 @@ function IOSStatusBar({ dark = false }) {
           <circle cx="8.5" cy="10.5" r="1.5" fill={c}/>
         </svg>
         <svg width="27" height="13" viewBox="0 0 27 13">
-          <rect x="0.5" y="0.5" width="23" height="12" rx="3.5" stroke={c} strokeOpacity="0.35" fill="none"/>
+          <rect x=".5" y=".5" width="23" height="12" rx="3.5" stroke={c} strokeOpacity=".35" fill="none"/>
           <rect x="2" y="2" width="20" height="9" rx="2" fill={c}/>
-          <path d="M25 4.5V8.5C25.8 8.2 26.5 7.2 26.5 6.5C26.5 5.8 25.8 4.8 25 4.5Z" fill={c} fillOpacity="0.4"/>
+          <path d="M25 4.5V8.5C25.8 8.2 26.5 7.2 26.5 6.5C26.5 5.8 25.8 4.8 25 4.5Z" fill={c} fillOpacity=".4"/>
         </svg>
       </div>
     </div>
@@ -274,26 +373,25 @@ function IOSStatusBar({ dark = false }) {
 }
 
 // ── iOS device shell ───────────────────────────────────────────────────────
-function IOSDevice({ children, width = 390, height = 844 }) {
+function IOSDevice({ children, width=390, height=844 }) {
   return (
-    <div style={{ width, height, borderRadius:48, overflow:'hidden', position:'relative',
-      background:'#F2F2F7',
-      boxShadow:'0 40px 80px rgba(0,0,0,0.2),0 0 0 1px rgba(0,0,0,0.12)',
-      fontFamily:'-apple-system,system-ui,sans-serif', WebkitFontSmoothing:'antialiased' }}>
-      {/* dynamic island */}
-      <div style={{ position:'absolute',top:11,left:'50%',transform:'translateX(-50%)',
-        width:126,height:37,borderRadius:24,background:'#000',zIndex:50 }}/>
-      {/* status bar */}
-      <div style={{ position:'absolute',top:0,left:0,right:0,zIndex:10 }}>
+    <div style={{
+      width, height, borderRadius:48, overflow:'hidden', position:'relative',
+      background:'var(--device-bg)', boxShadow:'var(--device-sh)',
+      fontFamily:'-apple-system,system-ui,sans-serif', WebkitFontSmoothing:'antialiased',
+      transition:'background .35s,box-shadow .35s',
+    }}>
+      <div style={{position:'absolute',top:11,left:'50%',transform:'translateX(-50%)',
+        width:126,height:37,borderRadius:24,background:'#000',zIndex:50}}/>
+      <div style={{position:'absolute',top:0,left:0,right:0,zIndex:10}}>
         <IOSStatusBar/>
       </div>
-      <div style={{ height:'100%', display:'flex', flexDirection:'column' }}>
-        <div style={{ flex:1, overflow:'hidden' }}>{children}</div>
+      <div style={{height:'100%',display:'flex',flexDirection:'column'}}>
+        <div style={{flex:1,overflow:'hidden'}}>{children}</div>
       </div>
-      {/* home indicator */}
-      <div style={{ position:'absolute',bottom:0,left:0,right:0,zIndex:60,height:34,
-        display:'flex',justifyContent:'center',alignItems:'flex-end',paddingBottom:8,pointerEvents:'none' }}>
-        <div style={{ width:139,height:5,borderRadius:100,background:'rgba(0,0,0,0.25)' }}/>
+      <div style={{position:'absolute',bottom:0,left:0,right:0,zIndex:60,height:34,
+        display:'flex',justifyContent:'center',alignItems:'flex-end',paddingBottom:8,pointerEvents:'none'}}>
+        <div style={{width:139,height:5,borderRadius:100,background:'var(--home-bar)'}}/>
       </div>
     </div>
   );
@@ -302,214 +400,117 @@ function IOSDevice({ children, width = 390, height = 844 }) {
 // ── Home screen ────────────────────────────────────────────────────────────
 function HomeScreen({ withBadge=false, shimmer=false, savedMovie=null, widgetPressed=null, onWidgetTap }) {
   const dummyApps = [
-    { color:'#4A90E2',glyph:'◐' },{ color:'#2A2A2A',glyph:'♪' },
-    { color:'#5DBA47',glyph:'◇' },{ color:'#FFD93D',glyph:'✸' },
-    { color:'#F75F4F',glyph:'◆' },{ color:'#7E57C2',glyph:'◉' },
-    { color:'#FF8C42',glyph:'☼' },{ color:'#1ABC9C',glyph:'∞' },
+    {color:'#4A90E2',glyph:'◐'},{color:'#2A2A2A',glyph:'♪'},
+    {color:'#5DBA47',glyph:'◇'},{color:'#FFD93D',glyph:'✸'},
+    {color:'#F75F4F',glyph:'◆'},{color:'#7E57C2',glyph:'◉'},
+    {color:'#FF8C42',glyph:'☼'},{color:'#1ABC9C',glyph:'∞'},
   ];
   return (
-    <div style={{ width:'100%', height:'100%', position:'relative', overflow:'hidden',
-      background:'linear-gradient(170deg,#D8B89A 0%,#C8896B 50%,#A6634A 100%)' }}>
-      {/* warm glow */}
-      <div style={{ position:'absolute',top:'-10%',right:'-20%',width:'80%',height:'50%',
-        borderRadius:'50%',background:'radial-gradient(circle,rgba(255,220,180,0.4) 0%,transparent 60%)',
-        filter:'blur(20px)',pointerEvents:'none' }}/>
-
-      <div style={{ paddingTop:70 }}/>
-
-      {/* widget */}
-      <div style={{ display:'flex',justifyContent:'center',marginTop:24,position:'relative' }}
+    <div style={{width:'100%',height:'100%',position:'relative',overflow:'hidden',
+      background:'var(--device-bg)',transition:'background .35s'}}>
+      <div style={{paddingTop:70}}/>
+      <div style={{display:'flex',justifyContent:'center',marginTop:24,position:'relative'}}
         onClick={e => { const btn = e.target.closest('[data-action]'); if (btn && onWidgetTap) onWidgetTap(btn.dataset.action); }}>
         <Widget withBadge={withBadge} shimmer={shimmer} savedMovie={savedMovie} pressed={widgetPressed}/>
       </div>
-
-      {/* app grid */}
-      <div style={{ display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:20,padding:'28px 28px 0' }}>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:20,padding:'28px 28px 0'}}>
         {dummyApps.map((a,i) => (
           i === 7 ? (
-            /* MeliPlay replaces last slot */
-            <div key="meliplay" style={{ display:'flex',flexDirection:'column',alignItems:'center',gap:6 }}>
+            <div key="meliplay" style={{display:'flex',flexDirection:'column',alignItems:'center',gap:6}}>
               <div style={{
-                width:52, height:52, borderRadius:13,
-                background:`linear-gradient(145deg,#D9622E 0%,${TERRA} 45%,#9A3A18 100%)`,
-                display:'flex', alignItems:'center', justifyContent:'center', flexDirection:'column',
-                boxShadow:`0 4px 12px rgba(200,82,42,0.45),0 2px 4px rgba(0,0,0,0.2)`,
-                position:'relative', overflow:'hidden',
+                width:52,height:52,borderRadius:13,background:TERRA,
+                display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',
+                boxShadow:'var(--icon-sh)',position:'relative',overflow:'hidden',
               }}>
-                <div style={{ position:'absolute',top:0,left:0,right:0,height:'50%',
-                  background:'rgba(255,255,255,0.12)',borderRadius:'13px 13px 40% 40%',pointerEvents:'none' }}/>
+                <div style={{position:'absolute',top:0,left:0,right:0,height:'50%',
+                  background:'rgba(255,255,255,.12)',borderRadius:'13px 13px 40% 40%',pointerEvents:'none'}}/>
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                  <path d="M6 4.5L16 10L6 15.5V4.5Z" fill="white" fillOpacity="0.95"/>
+                  <path d="M6 4.5L16 10L6 15.5V4.5Z" fill="white" fillOpacity=".95"/>
                 </svg>
-                <div style={{ fontFamily:'var(--sans)',fontSize:7,fontWeight:700,
-                  color:'rgba(255,255,255,0.85)',letterSpacing:'0.02em',marginTop:1,lineHeight:1 }}>MELI</div>
+                <div style={{fontFamily:'var(--sans)',fontSize:7,fontWeight:700,color:'rgba(255,255,255,.85)',letterSpacing:'.02em',marginTop:1,lineHeight:1}}>MELI</div>
               </div>
-              <div style={{ fontSize:10,color:'#fff',fontFamily:'var(--sans)',textShadow:'0 1px 2px rgba(0,0,0,0.4)' }}>MeliPlay</div>
+              <div style={{fontSize:10,color:'var(--icon-label)',fontFamily:'var(--sans)',textShadow:'0 1px 2px rgba(0,0,0,.3)'}}>MeliPlay</div>
             </div>
           ) : (
-            <div key={i} style={{ display:'flex',flexDirection:'column',alignItems:'center',gap:6 }}>
-              <div style={{ width:52,height:52,borderRadius:13,background:a.color,
+            <div key={i} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:6}}>
+              <div style={{width:52,height:52,borderRadius:13,background:a.color,
                 display:'flex',alignItems:'center',justifyContent:'center',
-                fontFamily:'var(--serif)',fontSize:22,color:'#fff',boxShadow:'0 2px 6px rgba(0,0,0,0.25)' }}>{a.glyph}</div>
-              <div style={{ fontSize:10,color:'#fff',fontFamily:'var(--sans)',textShadow:'0 1px 2px rgba(0,0,0,0.4)' }}>
+                fontFamily:'var(--serif)',fontSize:22,color:'#fff',boxShadow:'var(--icon-sh)'}}>{a.glyph}</div>
+              <div style={{fontSize:10,color:'var(--icon-label)',fontFamily:'var(--sans)',textShadow:'0 1px 2px rgba(0,0,0,.3)'}}>
                 {['Cámara','Música','Notas','Cal.','Mapas','Ajustes','Tiempo',''][i]}
               </div>
             </div>
           )
         ))}
       </div>
-
-      {/* dock */}
-      <div style={{ position:'absolute',bottom:34,left:12,right:12,height:86,borderRadius:32,
-        background:'rgba(255,255,255,0.18)',
-        backdropFilter:'blur(20px) saturate(180%)', WebkitBackdropFilter:'blur(20px) saturate(180%)',
-        display:'flex',alignItems:'center',justifyContent:'space-around',padding:'0 20px' }}>
+      <div style={{position:'absolute',bottom:34,left:12,right:12,height:86,borderRadius:32,
+        background:'var(--dock-bg)',backdropFilter:'var(--dock-blur)',WebkitBackdropFilter:'var(--dock-blur)',
+        boxShadow:'var(--dock-sh)',
+        display:'flex',alignItems:'center',justifyContent:'space-around',padding:'0 20px',
+        transition:'background .35s,box-shadow .35s'}}>
         {['#3498DB','#27AE60','#8E44AD','#E67E22'].map((c,i) => (
-          <div key={i} style={{ width:52,height:52,borderRadius:13,background:c,boxShadow:'0 2px 6px rgba(0,0,0,0.2)' }}/>
+          <div key={i} style={{width:52,height:52,borderRadius:13,background:c,boxShadow:'var(--icon-sh)'}}/>
         ))}
       </div>
     </div>
   );
 }
 
-// ── Search sheet ───────────────────────────────────────────────────────────
-function SearchSheet({ query='', focused=true, animate=true, results=[], showResults=false, onResultTap, tappedId=null }) {
-  return (
-    <div style={{ width:'100%',height:'100%',position:'relative',overflow:'hidden' }}>
-      {/* backdrop */}
-      <div style={{ position:'absolute',inset:0,
-        background:'linear-gradient(170deg,#D8B89A 0%,#C8896B 50%,#A6634A 100%)',
-        filter:'blur(16px) brightness(0.55)',transform:'scale(1.1)' }}/>
-      <div style={{ position:'absolute',inset:0,background:'rgba(0,0,0,0.25)' }}/>
-
-      {/* sheet */}
-      <div style={{ position:'absolute',top:44,left:0,right:0,bottom:0,
-        background:'#F5F0E8',borderTopLeftRadius:14,borderTopRightRadius:14,
-        animation:animate?'sheetUp 0.42s cubic-bezier(0.32,0.72,0,1)':'none',
-        display:'flex',flexDirection:'column',overflow:'hidden' }}>
-
-        {/* grabber */}
-        <div style={{ display:'flex',justifyContent:'center',padding:'8px 0 4px' }}>
-          <div style={{ width:36,height:5,borderRadius:3,background:'rgba(15,15,15,0.18)' }}/>
-        </div>
-
-        {/* header */}
-        <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',padding:'4px 20px 14px' }}>
-          <MeliMark size={15} dotColor={TERRA}/>
-          <div style={{ fontFamily:'var(--sans)',fontSize:15,fontWeight:500,color:TERRA,cursor:'pointer' }}>Cerrar</div>
-        </div>
-
-        {/* search bar */}
-        <div style={{ padding:'0 16px' }}>
-          <div style={{ display:'flex',alignItems:'center',gap:8,background:'rgba(15,15,15,0.05)',borderRadius:12,padding:'12px 14px',
-            animation:focused&&animate?'pulseSearch 0.9s cubic-bezier(0.34,1.56,0.64,1) 0.4s 1 both':'none',
-            position:'relative' }}>
-            <SearchIcon size={17} color="rgba(15,15,15,0.45)" weight={2.2}/>
-            <div style={{ flex:1,fontFamily:'var(--sans)',fontSize:16,color:INK,position:'relative' }}>
-              {query || <span style={{ color:'rgba(15,15,15,0.45)' }}>Películas, series, actores…</span>}
-              {focused && !query && (
-                <span style={{ display:'inline-block',width:2,height:18,background:TERRA,
-                  verticalAlign:'middle',marginLeft:1,animation:'pulseSearch 0.9s steps(2) infinite' }}/>
-              )}
-            </div>
-            {focused && (
-              <div className="anno-label" style={{ fontSize:9,padding:'2px 6px',background:'rgba(200,82,42,0.12)',borderRadius:4,color:TERRA }}>auto-focus</div>
-            )}
-          </div>
-        </div>
-
-        {/* results / recent */}
-        <div className="no-scrollbar" style={{ flex:1,overflowY:'auto',padding:'16px 16px 0' }}>
-          {!showResults && (
-            <>
-              <div style={{ fontFamily:'var(--sans)',fontSize:12,fontWeight:600,
-                color:'rgba(15,15,15,0.45)',letterSpacing:'0.08em',textTransform:'uppercase',marginBottom:12 }}>Recientes</div>
-              {['Drama coreano','Películas indie 2024','Documentales naturaleza'].map((q,i) => (
-                <div key={i} style={{ display:'flex',alignItems:'center',gap:12,padding:'12px 0',
-                  borderBottom:'0.5px solid rgba(15,15,15,0.06)' }}>
-                  <div style={{ width:30,height:30,borderRadius:8,background:'rgba(200,82,42,0.12)',
-                    display:'flex',alignItems:'center',justifyContent:'center' }}>
-                    <svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 3v4l3 2" stroke={TERRA} strokeWidth="1.8" fill="none" strokeLinecap="round"/><circle cx="7" cy="7" r="6" stroke={TERRA} strokeWidth="1.6" fill="none"/></svg>
-                  </div>
-                  <div style={{ flex:1,fontFamily:'var(--sans)',fontSize:15,color:INK }}>{q}</div>
-                </div>
-              ))}
-            </>
-          )}
-          {showResults && (
-            <div style={{ display:'flex',flexDirection:'column',gap:14 }}>
-              {results.map((m,i) => (
-                <ResultRow key={m.id} movie={m} delay={i*0.04}
-                  onTap={() => onResultTap && onResultTap(m)} tapped={tappedId===m.id}/>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Plus button with bounce → added morph ─────────────────────────────────
+// ── Add button ─────────────────────────────────────────────────────────────
 function AddButton({ added, animating, onTap }) {
+  const { ink } = useTheme();
   return (
-    <div
-      onClick={e => { e.stopPropagation(); onTap(); }}
-      style={{
-        height: 28,
-        width: added ? 84 : 28,
-        borderRadius: 14,
-        background: added ? TERRA : 'rgba(15,15,15,0.06)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
-        marginTop: 4, flexShrink: 0,
-        cursor: added ? 'default' : 'pointer',
-        overflow: 'hidden',
-        transition: 'width 0.35s cubic-bezier(0.34,1.56,0.64,1), background 0.2s',
-        animation: animating ? 'plusBounce 0.38s cubic-bezier(0.34,1.56,0.64,1)' : 'none',
-      }}>
+    <div onClick={e => { e.stopPropagation(); onTap(); }} style={{
+      height:28, width:added?84:28, borderRadius:14,
+      background:added?TERRA:'var(--add-bg)',
+      display:'flex',alignItems:'center',justifyContent:'center',gap:4,
+      marginTop:4,flexShrink:0,
+      cursor:added?'default':'pointer',overflow:'hidden',
+      transition:'width .35s cubic-bezier(.34,1.56,.64,1),background .2s,box-shadow .2s',
+      boxShadow:added?'var(--add-ash)':'var(--add-sh)',
+      animation:animating?'plusBounce .38s cubic-bezier(.34,1.56,.64,1)':'none',
+    }}>
       {added ? (
         <>
           <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
             <path d="M2 5.5l2.5 2.5 4.5-4.5" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
-          <span style={{ fontFamily:'var(--sans)',fontSize:11,fontWeight:600,color:'#fff',whiteSpace:'nowrap',letterSpacing:'-0.01em' }}>Añadido</span>
+          <span style={{fontFamily:'var(--sans)',fontSize:11,fontWeight:600,color:'#fff',whiteSpace:'nowrap',letterSpacing:'-.01em'}}>Añadido</span>
         </>
       ) : (
-        <PlusIcon size={12} color={INK}/>
+        <PlusIcon size={12} color={ink}/>
       )}
     </div>
   );
 }
 
-// ── Section label (separates Películas / Series) ──────────────────────────
+// ── Section label ──────────────────────────────────────────────────────────
 function SectionLabel({ label }) {
   return (
-    <div style={{
-      fontFamily:'var(--sans)', fontSize:11, fontWeight:700,
-      letterSpacing:'0.09em', textTransform:'uppercase',
-      color:'rgba(15,15,15,0.35)', padding:'4px 8px 6px',
-    }}>{label}</div>
+    <div style={{fontFamily:'var(--sans)',fontSize:11,fontWeight:700,
+      letterSpacing:'.09em',textTransform:'uppercase',
+      color:'var(--ink-sub)',padding:'4px 8px 6px'}}>{label}</div>
   );
 }
 
 // ── Result row ─────────────────────────────────────────────────────────────
 function ResultRow({ movie, delay=0, added, animating, onPlusTap }) {
-  const dot = <span style={{ width:3,height:3,borderRadius:'50%',background:'rgba(15,15,15,0.4)',flexShrink:0 }}/>;
+  const dot = <span style={{width:3,height:3,borderRadius:'50%',background:'var(--ink-sub)',flexShrink:0}}/>;
   return (
     <div style={{
-      display:'flex',gap:12,alignItems:'flex-start',padding:8,borderRadius:10,
-      background: added ? 'rgba(200,82,42,0.05)' : 'transparent',
-      animation:`fadeUpIn 0.4s cubic-bezier(0.34,1.56,0.64,1) ${delay}s both`,
-      transition:'background 0.3s',
+      display:'flex',gap:12,alignItems:'flex-start',padding:10,borderRadius:14,
+      background:'var(--row-bg)',
+      boxShadow:added?'var(--row-ash)':'var(--row-sh)',
+      animation:`fadeUpIn .4s cubic-bezier(.34,1.56,.64,1) ${delay}s both`,
+      transition:'box-shadow .3s,background .35s',
     }}>
       <Poster movie={movie} size={56} radius={6} withGlow={added}/>
-      <div style={{ flex:1,paddingTop:4 }}>
-        <div style={{ fontFamily:'var(--serif)',fontSize:17,fontWeight:500,color:INK,letterSpacing:'-0.01em',lineHeight:1.15,marginBottom:4 }}>{movie.title}</div>
-        <div style={{ display:'flex',alignItems:'center',gap:8,fontFamily:'var(--sans)',fontSize:12,color:'rgba(15,15,15,0.5)',flexWrap:'wrap' }}>
+      <div style={{flex:1,paddingTop:4}}>
+        <div style={{fontFamily:'var(--serif)',fontSize:17,fontWeight:500,color:'var(--ink)',letterSpacing:'-.01em',lineHeight:1.15,marginBottom:4}}>{movie.title}</div>
+        <div style={{display:'flex',alignItems:'center',gap:8,fontFamily:'var(--sans)',fontSize:12,color:'var(--ink-sub)',flexWrap:'wrap'}}>
           <span>{movie.year}</span>
           {dot}
-          <span style={{ padding:'2px 7px',borderRadius:4,background:'rgba(200,82,42,0.1)',color:TERRA,fontWeight:600,letterSpacing:'0.02em' }}>{movie.genre}</span>
-          {movie.seasons && <>{dot}<span>{movie.seasons} temp.</span></>}
+          <span style={{padding:'2px 7px',borderRadius:4,background:'rgba(200,82,42,.1)',color:TERRA,fontWeight:600,letterSpacing:'.02em'}}>{movie.genre}</span>
         </div>
       </div>
       <AddButton added={added} animating={animating} onTap={onPlusTap}/>
@@ -521,33 +522,32 @@ function ResultRow({ movie, delay=0, added, animating, onPlusTap }) {
 function ConfirmationBanner({ movie, animate=true, onHidden }) {
   const [out, setOut]       = useState(false);
   const [hidden, setHidden] = useState(false);
-
   useEffect(() => {
     if (!animate) return;
-    const t1 = setTimeout(() => setOut(true),    1500);
+    const t1 = setTimeout(() => setOut(true), 1500);
     const t2 = setTimeout(() => { setHidden(true); onHidden?.(); }, 1920);
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, [animate]);
-
   if (hidden) return null;
-
   return (
-    <div style={{ position:'absolute',top:0,left:0,right:0,padding:'54px 14px 0',zIndex:100,pointerEvents:'none' }}>
-      <div style={{ background:'#0F0F0F',borderRadius:18,padding:'12px 14px',
-        display:'flex',alignItems:'center',gap:12,boxShadow:'0 12px 30px rgba(0,0,0,0.3)',
-        animation: out
-          ? 'bannerOut 0.42s cubic-bezier(0.32,0.72,0,1) forwards'
-          : (animate ? 'bannerIn 0.45s cubic-bezier(0.34,1.56,0.64,1)' : 'none') }}>
+    <div style={{position:'absolute',top:0,left:0,right:0,padding:'54px 14px 0',zIndex:100,pointerEvents:'none'}}>
+      <div style={{
+        background:'var(--banner-bg)',borderRadius:18,padding:'12px 14px',
+        display:'flex',alignItems:'center',gap:12,
+        boxShadow:'-6px -6px 16px rgba(255,255,255,.06),6px 6px 16px rgba(0,0,0,.5)',
+        animation:out?'bannerOut .42s cubic-bezier(.32,.72,0,1) forwards'
+          :(animate?'bannerIn .45s cubic-bezier(.34,1.56,.64,1)':'none'),
+      }}>
         <Poster movie={movie} size={36} radius={4}/>
-        <div style={{ flex:1 }}>
-          <div style={{ fontFamily:'var(--sans)',fontSize:14,fontWeight:600,color:'#F5F0E8',letterSpacing:'-0.01em' }}>Guardado en tu lista</div>
-          <div style={{ fontFamily:'var(--serif)',fontSize:12,color:'rgba(245,240,232,0.6)',fontStyle:'italic',marginTop:1 }}>{movie.title}</div>
+        <div style={{flex:1}}>
+          <div style={{fontFamily:'var(--sans)',fontSize:14,fontWeight:600,color:'#F5F0E8',letterSpacing:'-.01em'}}>Guardado en tu lista</div>
+          <div style={{fontFamily:'var(--serif)',fontSize:12,color:'rgba(245,240,232,.6)',fontStyle:'italic',marginTop:1}}>{movie.title}</div>
         </div>
-        <div style={{ width:28,height:28,borderRadius:'50%',background:TERRA,display:'flex',alignItems:'center',justifyContent:'center' }}>
+        <div style={{width:28,height:28,borderRadius:'50%',background:TERRA,display:'flex',alignItems:'center',justifyContent:'center'}}>
           <svg width="14" height="14" viewBox="0 0 14 14">
             <path d="M3 7l3 3 5-6" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"
-              style={{ strokeDasharray:16, strokeDashoffset:animate?16:0,
-                animation:animate?'checkDraw 0.4s cubic-bezier(0.32,0.72,0,1) 0.25s forwards':'none' }}/>
+              style={{strokeDasharray:16,strokeDashoffset:animate?16:0,
+                animation:animate?'checkDraw .4s cubic-bezier(.32,.72,0,1) .25s forwards':'none'}}/>
           </svg>
         </div>
       </div>
@@ -555,31 +555,22 @@ function ConfirmationBanner({ movie, animate=true, onHidden }) {
   );
 }
 
-// ── Skeleton loading row ───────────────────────────────────────────────────
-function SkeletonRow({ delay = 0 }) {
-  const shimmer = {
-    position:'absolute', inset:0,
-    background:'linear-gradient(90deg, transparent, rgba(200,82,42,0.11) 50%, transparent)',
-    animation:'shimmerSweep 1.2s ease-in-out infinite',
-  };
+// ── Skeleton row ───────────────────────────────────────────────────────────
+function SkeletonRow({ delay=0 }) {
+  const sh = {position:'absolute',inset:0,
+    background:'linear-gradient(90deg,transparent,rgba(200,82,42,.1) 50%,transparent)',
+    animation:'shimmerSweep 1.2s ease-in-out infinite'};
   return (
-    <div style={{ display:'flex', gap:12, alignItems:'flex-start', padding:8,
-      animation:`fadeUpIn 0.28s ease ${delay}s both` }}>
-      {/* poster placeholder */}
-      <div style={{ width:56, height:84, borderRadius:6, background:'rgba(15,15,15,0.07)',
-        overflow:'hidden', position:'relative', flexShrink:0 }}>
-        <div style={{ ...shimmer }}/>
+    <div style={{display:'flex',gap:12,alignItems:'flex-start',padding:8,animation:`fadeUpIn .28s ease ${delay}s both`}}>
+      <div style={{width:56,height:84,borderRadius:6,background:'var(--btn-s-bg)',overflow:'hidden',position:'relative',flexShrink:0}}>
+        <div style={{...sh}}/>
       </div>
-      <div style={{ flex:1, paddingTop:6, display:'flex', flexDirection:'column', gap:10 }}>
-        {/* title line */}
-        <div style={{ height:15, borderRadius:6, background:'rgba(15,15,15,0.07)',
-          width:'68%', overflow:'hidden', position:'relative' }}>
-          <div style={{ ...shimmer, animationDelay:'0.1s' }}/>
+      <div style={{flex:1,paddingTop:6,display:'flex',flexDirection:'column',gap:10}}>
+        <div style={{height:15,borderRadius:6,background:'var(--btn-s-bg)',width:'68%',overflow:'hidden',position:'relative'}}>
+          <div style={{...sh,animationDelay:'.1s'}}/>
         </div>
-        {/* meta line */}
-        <div style={{ height:11, borderRadius:6, background:'rgba(15,15,15,0.07)',
-          width:'42%', overflow:'hidden', position:'relative' }}>
-          <div style={{ ...shimmer, animationDelay:'0.2s' }}/>
+        <div style={{height:11,borderRadius:6,background:'var(--btn-s-bg)',width:'42%',overflow:'hidden',position:'relative'}}>
+          <div style={{...sh,animationDelay:'.2s'}}/>
         </div>
       </div>
     </div>
@@ -588,30 +579,27 @@ function SkeletonRow({ delay = 0 }) {
 
 // ── Search sheet (interactive) ─────────────────────────────────────────────
 function SearchSheetInteractive({ onResultTap, onDismiss }) {
-  const [query, setQuery]                 = useState('');
-  const [animatingId, setAnimatingId]     = useState(null);
-  const [addedIds, setAddedIds]           = useState(new Set());
-  const [banners, setBanners]             = useState([]);
-  const [loading, setLoading]             = useState(false);
-  const [displayedResults, setDisplayed]  = useState([]);
-  const [closing, setClosing]             = useState(false);
-  const [recents, setRecents]             = useState(['Harry Potter','Forrest Gump','Tony Stark','Steve Carell']);
+  const { ink } = useTheme();
+  const [query, setQuery]                = useState('');
+  const [animatingId, setAnimatingId]    = useState(null);
+  const [addedIds, setAddedIds]          = useState(new Set());
+  const [banners, setBanners]            = useState([]);
+  const [loading, setLoading]            = useState(false);
+  const [displayedResults, setDisplayed] = useState([]);
+  const [closing, setClosing]            = useState(false);
+  const [recents, setRecents]            = useState(['Harry Potter','Forrest Gump','Tony Stark','Steve Carell']);
   const inputRef  = useRef(null);
   const debouncer = useRef(null);
 
   useEffect(() => { setTimeout(() => inputRef.current?.focus(), 420); }, []);
 
-  const handleDismiss = () => {
-    setClosing(true);
-    setTimeout(() => onDismiss(), 380);
-  };
+  const handleDismiss = () => { setClosing(true); setTimeout(() => onDismiss(), 380); };
 
   const handleQueryChange = val => {
     setQuery(val);
     clearTimeout(debouncer.current);
     if (!val) { setLoading(false); setDisplayed([]); return; }
-    setLoading(true);
-    setDisplayed([]);
+    setLoading(true); setDisplayed([]);
     debouncer.current = setTimeout(async () => {
       if (val.trim().length < 2) { setDisplayed([]); setLoading(false); return; }
       try {
@@ -619,21 +607,14 @@ function SearchSheetInteractive({ onResultTap, onDismiss }) {
         const data = await res.json();
         if (data.Response === 'True') {
           setDisplayed(data.Search.map(m => ({
-            id:     m.imdbID,
-            title:  m.Title,
-            year:   parseInt(m.Year) || 0,
-            type:   m.Type === 'series' ? 'series' : 'movie',
-            genre:  m.Type === 'series' ? 'Serie' : 'Película',
-            poster: m.Poster,
+            id:m.imdbID, title:m.Title, year:parseInt(m.Year)||0,
+            type:m.Type==='series'?'series':'movie',
+            genre:m.Type==='series'?'Serie':'Película', poster:m.Poster,
           })));
           const term = val.trim();
           setRecents(prev => [term, ...prev.filter(r => r.toLowerCase() !== term.toLowerCase())].slice(0, 5));
-        } else {
-          setDisplayed([]);
-        }
-      } catch(e) {
-        setDisplayed([]);
-      }
+        } else { setDisplayed([]); }
+      } catch(e) { setDisplayed([]); }
       setLoading(false);
     }, 700);
   };
@@ -643,132 +624,99 @@ function SearchSheetInteractive({ onResultTap, onDismiss }) {
   const handlePlusTap = m => {
     if (addedIds.has(m.id) || animatingId) return;
     setAnimatingId(m.id);
-    setTimeout(() => {
-      setAnimatingId(null);
-      setAddedIds(prev => new Set(prev).add(m.id));
-    }, 280);
-    setTimeout(() => {
-      setBanners(prev => [...prev, { id: Date.now(), movie: m }]);
-      onResultTap(m);
-    }, 1100);
+    setTimeout(() => { setAnimatingId(null); setAddedIds(prev => new Set(prev).add(m.id)); }, 280);
+    setTimeout(() => { setBanners(prev => [...prev, {id:Date.now(), movie:m}]); onResultTap(m); }, 1100);
   };
 
   return (
-    <div style={{ width:'100%',height:'100%',position:'relative',overflow:'hidden' }}>
-      {banners.map(b => (
-        <ConfirmationBanner key={b.id} movie={b.movie} animate onHidden={() => removeBanner(b.id)}/>
-      ))}
-      {/* backdrop */}
-      <div style={{ position:'absolute',inset:0,
-        background:'linear-gradient(170deg,#D8B89A 0%,#C8896B 50%,#A6634A 100%)',
-        filter:'blur(16px) brightness(0.55)',transform:'scale(1.1)' }}/>
-      <div style={{ position:'absolute',inset:0,background:'rgba(0,0,0,0.25)' }}/>
-
-      {/* sheet — top:62 clears our 62px status bar (21+22+19 padding/content) */}
-      <div style={{ position:'absolute',top:62,left:0,right:0,bottom:0,
-        background:'#F5F0E8',borderTopLeftRadius:14,borderTopRightRadius:14,
-        animation: closing
-          ? 'sheetDown 0.38s cubic-bezier(0.32,0.72,0,1) forwards'
-          : 'sheetUp 0.42s cubic-bezier(0.32,0.72,0,1)',
-        display:'flex',flexDirection:'column',overflow:'hidden' }}>
-
-        <div style={{ display:'flex',justifyContent:'center',padding:'8px 0 4px' }}>
-          <div style={{ width:36,height:5,borderRadius:3,background:'rgba(15,15,15,0.18)' }}/>
+    <div style={{width:'100%',height:'100%',position:'relative',overflow:'hidden'}}>
+      {banners.map(b => <ConfirmationBanner key={b.id} movie={b.movie} animate onHidden={() => removeBanner(b.id)}/>)}
+      <div style={{position:'absolute',inset:0,background:'var(--device-bg)',filter:'var(--bd-filter)',transform:'scale(1.1)'}}/>
+      <div style={{position:'absolute',inset:0,background:'rgba(0,0,0,.22)'}}/>
+      <div style={{
+        position:'absolute',top:62,left:0,right:0,bottom:0,
+        background:'var(--sheet-bg)',backdropFilter:'var(--sheet-blur)',WebkitBackdropFilter:'var(--sheet-blur)',
+        borderTopLeftRadius:24,borderTopRightRadius:24,
+        animation:closing?'sheetDown .38s cubic-bezier(.32,.72,0,1) forwards':'sheetUp .42s cubic-bezier(.32,.72,0,1)',
+        display:'flex',flexDirection:'column',overflow:'hidden',
+        transition:'background .35s',
+      }}>
+        <div style={{display:'flex',justifyContent:'center',padding:'8px 0 4px'}}>
+          <div style={{width:36,height:5,borderRadius:3,background:'var(--grabber)'}}/>
         </div>
-
-        <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',padding:'4px 20px 14px' }}>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'4px 20px 14px'}}>
           <MeliMark size={15} dotColor={TERRA}/>
-          <div onClick={handleDismiss}
-            style={{ fontFamily:'var(--sans)',fontSize:15,fontWeight:500,color:TERRA,cursor:'pointer' }}>Cerrar</div>
+          <div onClick={handleDismiss} style={{fontFamily:'var(--sans)',fontSize:15,fontWeight:500,color:TERRA,cursor:'pointer'}}>Cerrar</div>
         </div>
-
-        {/* real text input */}
-        <div style={{ padding:'0 16px' }}>
-          <div style={{ display:'flex',alignItems:'center',gap:8,
-            background:'rgba(15,15,15,0.05)',borderRadius:12,padding:'12px 14px',
-            animation:'pulseSearch 0.9s cubic-bezier(0.34,1.56,0.64,1) 0.4s 1 both' }}>
-            <SearchIcon size={17} color="rgba(15,15,15,0.45)" weight={2.2}/>
-            <input
-              ref={inputRef}
-              value={query}
-              onChange={e => handleQueryChange(e.target.value)}
+        <div style={{padding:'0 16px'}}>
+          <div style={{
+            display:'flex',alignItems:'center',gap:8,
+            background:'var(--search-bg)',borderRadius:12,padding:'12px 14px',
+            boxShadow:'var(--search-sh)',
+            animation:'pulseSearch .9s cubic-bezier(.34,1.56,.64,1) .4s 1 both',
+            transition:'background .35s,box-shadow .35s',
+          }}>
+            <SearchIcon size={17} color="var(--ink-sub)" weight={2.2}/>
+            <input ref={inputRef} value={query} onChange={e => handleQueryChange(e.target.value)}
               placeholder="Películas, series, actores…"
-              style={{ flex:1,border:'none',background:'transparent',outline:'none',
-                fontFamily:'var(--sans)',fontSize:16,color:INK,
-                caretColor:TERRA }}/>
+              style={{flex:1,border:'none',background:'transparent',outline:'none',
+                fontFamily:'var(--sans)',fontSize:16,color:'var(--ink)',caretColor:TERRA}}/>
             {query && (
-              <div
-                onClick={() => { handleQueryChange(''); inputRef.current?.focus(); }}
-                style={{
-                  width:18, height:18, borderRadius:'50%', flexShrink:0,
-                  background:'rgba(15,15,15,0.18)',
-                  display:'flex', alignItems:'center', justifyContent:'center',
-                  cursor:'pointer',
-                  transition:'background 0.15s',
-                }}>
+              <div onClick={() => { handleQueryChange(''); inputRef.current?.focus(); }}
+                style={{width:18,height:18,borderRadius:'50%',flexShrink:0,
+                  background:'var(--clr-btn)',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
                 <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
-                  <path d="M1 1l6 6M7 1L1 7" stroke={INK} strokeWidth="1.6" strokeLinecap="round"/>
+                  <path d="M1 1l6 6M7 1L1 7" stroke={ink} strokeWidth="1.6" strokeLinecap="round"/>
                 </svg>
               </div>
             )}
           </div>
         </div>
-
-        {/* results */}
-        <div className="no-scrollbar" style={{ flex:1,overflowY:'auto',padding:'16px 16px 0' }}>
+        <div className="no-scrollbar" style={{flex:1,overflowY:'auto',padding:'16px 16px 0'}}>
           {!query && (
-            <div style={{ fontFamily:'var(--sans)',fontSize:12,fontWeight:600,
-              color:'rgba(15,15,15,0.45)',letterSpacing:'0.08em',textTransform:'uppercase',marginBottom:12 }}>Recientes</div>
+            <div style={{fontFamily:'var(--sans)',fontSize:12,fontWeight:600,
+              color:'var(--ink-sub)',letterSpacing:'.08em',textTransform:'uppercase',marginBottom:12}}>Recientes</div>
           )}
           {!query && recents.map((q,i) => (
             <div key={i} onClick={() => handleQueryChange(q)}
-              style={{ display:'flex',alignItems:'center',gap:12,padding:'12px 0',
-                borderBottom:'0.5px solid rgba(15,15,15,0.06)',cursor:'pointer' }}>
-              <div style={{ width:30,height:30,borderRadius:8,background:'rgba(200,82,42,0.12)',
-                display:'flex',alignItems:'center',justifyContent:'center' }}>
-                <svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 3v4l3 2" stroke={TERRA} strokeWidth="1.8" fill="none" strokeLinecap="round"/><circle cx="7" cy="7" r="6" stroke={TERRA} strokeWidth="1.6" fill="none"/></svg>
+              style={{display:'flex',alignItems:'center',gap:12,padding:'12px 0',
+                borderBottom:'.5px solid var(--divider)',cursor:'pointer'}}>
+              <div style={{width:30,height:30,borderRadius:8,background:'var(--ri-bg)',
+                display:'flex',alignItems:'center',justifyContent:'center'}}>
+                <svg width="14" height="14" viewBox="0 0 14 14">
+                  <path d="M7 3v4l3 2" stroke={TERRA} strokeWidth="1.8" fill="none" strokeLinecap="round"/>
+                  <circle cx="7" cy="7" r="6" stroke={TERRA} strokeWidth="1.6" fill="none"/>
+                </svg>
               </div>
-              <div style={{ flex:1,fontFamily:'var(--sans)',fontSize:15,color:INK }}>{q}</div>
+              <div style={{flex:1,fontFamily:'var(--sans)',fontSize:15,color:'var(--ink)'}}>{q}</div>
             </div>
           ))}
-          {/* skeleton while loading */}
           {loading && (
-            <div style={{ display:'flex',flexDirection:'column',gap:6,marginTop:4 }}>
-              {[0,1,2].map(i => <SkeletonRow key={i} delay={i*0.06}/>)}
+            <div style={{display:'flex',flexDirection:'column',gap:6,marginTop:4}}>
+              {[0,1,2].map(i => <SkeletonRow key={i} delay={i*.06}/>)}
             </div>
           )}
-
-          {/* real results after load */}
           {!loading && query && (() => {
             if (!displayedResults.length)
-              return <div style={{ fontFamily:'var(--sans)',fontSize:14,color:'rgba(15,15,15,0.4)',textAlign:'center',marginTop:40 }}>Sin resultados</div>;
-
+              return <div style={{fontFamily:'var(--sans)',fontSize:14,color:'var(--ink-sub)',textAlign:'center',marginTop:40}}>Sin resultados</div>;
             const films  = displayedResults.filter(m => m.type !== 'series');
             const series = displayedResults.filter(m => m.type === 'series');
             const mixed  = films.length > 0 && series.length > 0;
-
             const renderRows = (items, offset=0) => items.map((m,i) => (
-              <ResultRow key={m.id} movie={m} delay={(offset+i)*0.05}
+              <ResultRow key={m.id} movie={m} delay={(offset+i)*.05}
                 added={addedIds.has(m.id)} animating={animatingId===m.id}
                 onPlusTap={() => handlePlusTap(m)}/>
             ));
-
             return mixed ? (
-              <div style={{ display:'flex',flexDirection:'column' }}>
+              <div style={{display:'flex',flexDirection:'column'}}>
                 <SectionLabel label="Películas"/>
-                <div style={{ display:'flex',flexDirection:'column',gap:10,marginBottom:12 }}>
-                  {renderRows(films, 0)}
-                </div>
-                <div style={{ height:1, background:'rgba(15,15,15,0.06)', margin:'4px 8px 12px' }}/>
+                <div style={{display:'flex',flexDirection:'column',gap:10,marginBottom:12}}>{renderRows(films,0)}</div>
+                <div style={{height:1,background:'var(--divider)',margin:'4px 8px 12px'}}/>
                 <SectionLabel label="Series"/>
-                <div style={{ display:'flex',flexDirection:'column',gap:10 }}>
-                  {renderRows(series, films.length)}
-                </div>
+                <div style={{display:'flex',flexDirection:'column',gap:10}}>{renderRows(series,films.length)}</div>
               </div>
             ) : (
-              <div style={{ display:'flex',flexDirection:'column',gap:10 }}>
-                {renderRows(displayedResults)}
-              </div>
+              <div style={{display:'flex',flexDirection:'column',gap:10}}>{renderRows(displayedResults)}</div>
             );
           })()}
         </div>
@@ -777,88 +725,149 @@ function SearchSheetInteractive({ onResultTap, onDismiss }) {
   );
 }
 
-// ── Live demo (interaction-only, no auto-play) ─────────────────────────────
+// ── Style panel ────────────────────────────────────────────────────────────
+function StylePanel({ uiStyle, mode, onStyle, onMode }) {
+  const styles = ['neuro','glass','flat'];
+  const labels = { neuro:'Neumorphic', glass:'Glassmorphic', flat:'Flat' };
+  return (
+    <div style={{
+      width:152, borderRadius:22,
+      background:'var(--widget-bg)', backdropFilter:'var(--widget-blur)', WebkitBackdropFilter:'var(--widget-blur)',
+      boxShadow:'var(--widget-sh)',
+      padding:'18px 14px', display:'flex', flexDirection:'column', gap:18,
+      transition:'background .35s,box-shadow .35s',
+    }}>
+      {/* Light / Dark */}
+      <div>
+        <div style={{fontFamily:'var(--mono)',fontSize:9,fontWeight:600,letterSpacing:'.1em',
+          textTransform:'uppercase',color:'var(--ink-sub)',marginBottom:9}}>Theme</div>
+        <div style={{display:'flex',background:'var(--search-bg)',borderRadius:10,padding:3,
+          boxShadow:'var(--search-sh)',transition:'background .35s,box-shadow .35s'}}>
+          {['light','dark'].map(m => (
+            <button key={m} onClick={() => onMode(m)} style={{
+              flex:1, padding:'6px 0', borderRadius:7, border:'none', cursor:'pointer',
+              fontFamily:'var(--mono)', fontSize:9, fontWeight:600, letterSpacing:'.05em', textTransform:'uppercase',
+              background: mode===m ? TERRA : 'transparent',
+              color: mode===m ? '#fff' : 'var(--ink-sub)',
+              boxShadow: mode===m ? '0 2px 8px rgba(200,82,42,.35)' : 'none',
+              transition:'all .2s',
+            }}>{m==='light'?'☀ Light':'☾ Dark'}</button>
+          ))}
+        </div>
+      </div>
+      {/* Style */}
+      <div>
+        <div style={{fontFamily:'var(--mono)',fontSize:9,fontWeight:600,letterSpacing:'.1em',
+          textTransform:'uppercase',color:'var(--ink-sub)',marginBottom:9}}>Style</div>
+        <div style={{display:'flex',flexDirection:'column',gap:5}}>
+          {styles.map(s => (
+            <button key={s} onClick={() => onStyle(s)} style={{
+              padding:'8px 11px', borderRadius:9, border:'none', cursor:'pointer',
+              fontFamily:'var(--sans)', fontSize:13, fontWeight: uiStyle===s ? 600 : 400,
+              textAlign:'left', display:'flex', alignItems:'center', gap:8,
+              background: uiStyle===s ? TERRA : 'transparent',
+              color: uiStyle===s ? '#fff' : 'var(--ink)',
+              boxShadow: uiStyle===s ? 'var(--btn-p-sh)' : 'none',
+              transition:'all .2s',
+            }}>
+              <span style={{width:6,height:6,borderRadius:'50%',flexShrink:0,
+                background:uiStyle===s?'rgba(255,255,255,.8)':'var(--ink-sub)'}}/>
+              {labels[s]}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Live demo ──────────────────────────────────────────────────────────────
 function LiveDemo() {
-  const [state, setState]     = useState('home');
+  const [state, setState]       = useState('home');
   const [savedMovie, setSavedMovie] = useState(null);
+  const [uiStyle, setUIStyle]   = useState('neuro');
+  const [mode, setMode]         = useState('light');
   const timeouts = useRef([]);
 
-  const after = (ms, fn) => { const id = setTimeout(fn, ms); timeouts.current.push(id); };
+  const presetKey = `${uiStyle}-${mode}`;
+  const preset    = PRESETS[presetKey];
+
+  useEffect(() => { applyPreset(presetKey); }, [presetKey]);
 
   const reset = () => {
-    timeouts.current.forEach(clearTimeout);
-    timeouts.current = [];
-    setState('home');
-    setSavedMovie(null);
+    timeouts.current.forEach(clearTimeout); timeouts.current = [];
+    setState('home'); setSavedMovie(null);
   };
 
-  const openSheet = () => setState('sheet');
-
-  const handleSave = m => {
-    setSavedMovie(m);
-    setState('confirming');
-  };
+  const handleStyle = s => setUIStyle(s);
+  const handleMode  = m => setMode(m);
 
   const STATE_LABELS = {
-    'home':        '00 · home — tap Buscar',
-    'sheet':       '01 · search sheet',
-    'confirming':  '02 · guardando…',
-    'home-updated':'03 · guardado ✓',
+    'home':'00 · home — tap Buscar','sheet':'01 · search sheet',
+    'confirming':'02 · guardando…','home-updated':'03 · guardado ✓',
   };
 
   return (
-    <div style={{ position:'relative', display:'inline-block' }}>
-      <IOSDevice width={370} height={800}>
-        <div style={{ width:'100%', height:'100%', position:'relative', overflow:'hidden' }}>
+    <ThemeCtx.Provider value={{ ink: preset._ink, isDark: preset._dark }}>
+      <div style={{display:'flex',alignItems:'center',gap:36,flexWrap:'wrap',justifyContent:'center'}}>
 
-          {(state === 'home' || state === 'home-updated') && (
-            <HomeScreen
-              withBadge={state === 'home-updated'}
-              shimmer={state === 'home-updated'}
-              savedMovie={savedMovie}
-              onWidgetTap={action => { if (action === 'buscar') openSheet(); }}
-            />
-          )}
-
-          {(state === 'sheet' || state === 'confirming') && (
-            <SearchSheetInteractive
-              onResultTap={handleSave}
-              onDismiss={() => setState('home')}
-            />
-          )}
-
-          {state === 'confirming' && savedMovie && (
-            <div style={{ position:'absolute',top:200,left:38,zIndex:99,
-              animation:'posterFly 0.55s cubic-bezier(0.34,1.56,0.64,1) forwards',
-              '--fx':'50px','--fy':'-150px' }}>
-              <Poster movie={savedMovie} size={56} radius={6} withGlow/>
+        {/* device */}
+        <div style={{position:'relative',display:'inline-block'}}>
+          <IOSDevice width={370} height={800}>
+            <div style={{width:'100%',height:'100%',position:'relative',overflow:'hidden'}}>
+              {(state==='home'||state==='home-updated') && (
+                <HomeScreen
+                  withBadge={state==='home-updated'} shimmer={state==='home-updated'}
+                  savedMovie={savedMovie}
+                  onWidgetTap={action => { if (action==='buscar') setState('sheet'); }}
+                />
+              )}
+              {(state==='sheet'||state==='confirming') && (
+                <SearchSheetInteractive
+                  onResultTap={m => { setSavedMovie(m); setState('confirming'); }}
+                  onDismiss={() => setState('home')}
+                />
+              )}
+              {state==='confirming' && savedMovie && (
+                <div style={{position:'absolute',top:200,left:38,zIndex:99,
+                  animation:'posterFly .55s cubic-bezier(.34,1.56,.64,1) forwards',
+                  '--fx':'50px','--fy':'-150px'}}>
+                  <Poster movie={savedMovie} size={56} radius={6} withGlow/>
+                </div>
+              )}
             </div>
-          )}
+          </IOSDevice>
+
+          {/* live badge */}
+          <div style={{position:'absolute',top:-14,left:24,display:'flex',alignItems:'center',gap:6,
+            background:'var(--banner-bg)',color:'var(--ink)',padding:'4px 10px',borderRadius:20,
+            fontFamily:'var(--mono)',fontSize:10,fontWeight:600,letterSpacing:'.08em',whiteSpace:'nowrap',
+            boxShadow:'var(--row-sh)',transition:'background .35s'}}>
+            <span style={{width:6,height:6,borderRadius:'50%',background:'#5DBA47',
+              boxShadow:'0 0 0 0 rgba(93,186,71,.6)',animation:'ringPing 1.4s ease-out infinite'}}/>
+            <span style={{color:'var(--ink)'}}>LIVE · TAP THE WIDGET</span>
+          </div>
+
+          {/* reset */}
+          <button onClick={reset} style={{position:'absolute',top:-14,right:24,
+            background:'var(--widget-bg)',border:`1px solid ${TERRA}`,color:TERRA,
+            padding:'4px 12px',borderRadius:20,fontFamily:'var(--mono)',fontSize:10,
+            fontWeight:600,letterSpacing:'.08em',cursor:'pointer',whiteSpace:'nowrap',
+            transition:'background .35s'}}>↻ RESET</button>
+
+          {/* state label */}
+          <div style={{position:'absolute',bottom:-32,left:0,right:0,textAlign:'center',
+            fontFamily:'var(--mono)',fontSize:10,color:'var(--ink-sub)',
+            letterSpacing:'.1em',textTransform:'uppercase'}}>
+            {STATE_LABELS[state]}
+          </div>
         </div>
-      </IOSDevice>
 
-      {/* badge */}
-      <div style={{ position:'absolute',top:-14,left:24,display:'flex',alignItems:'center',gap:6,
-        background:INK,color:'#F5F0E8',padding:'4px 10px',borderRadius:20,
-        fontFamily:'var(--mono)',fontSize:10,fontWeight:600,letterSpacing:'0.08em',whiteSpace:'nowrap' }}>
-        <span style={{ width:6,height:6,borderRadius:'50%',background:'#5DBA47',
-          boxShadow:'0 0 0 0 rgba(93,186,71,0.6)',animation:'ringPing 1.4s ease-out infinite' }}/>
-        LIVE · TAP THE WIDGET
+        {/* panel */}
+        <StylePanel uiStyle={uiStyle} mode={mode} onStyle={handleStyle} onMode={handleMode}/>
+
       </div>
-
-      {/* reset */}
-      <button onClick={reset} style={{ position:'absolute',top:-14,right:24,
-        background:'#F5F0E8',border:`1px solid ${TERRA}`,color:TERRA,
-        padding:'4px 12px',borderRadius:20,fontFamily:'var(--mono)',fontSize:10,
-        fontWeight:600,letterSpacing:'0.08em',cursor:'pointer',whiteSpace:'nowrap' }}>↻ RESET</button>
-
-      {/* state label */}
-      <div style={{ position:'absolute',bottom:-32,left:0,right:0,textAlign:'center',
-        fontFamily:'var(--mono)',fontSize:10,color:'rgba(15,15,15,0.4)',
-        letterSpacing:'0.1em',textTransform:'uppercase' }}>
-        {STATE_LABELS[state]}
-      </div>
-    </div>
+    </ThemeCtx.Provider>
   );
 }
 
