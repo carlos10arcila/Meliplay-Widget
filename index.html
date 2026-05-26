@@ -92,7 +92,7 @@
 <div id="root"></div>
 <script type="text/babel">
 const { useState, useEffect, useRef, useContext, createContext } = React;
-const TERRA = '#C8522A';
+const TERRA = '#D4572E';
 const OMDB_KEY = 'ab504452';
 
 // ── Smart search knowledge base ───────────────────────────────────────────
@@ -2175,7 +2175,7 @@ function MeliPlayAppScreen({ savedMovies=[], onBack, onMovieAdded }) {
                             display:'inline-block',flexShrink:0,
                             boxShadow:'0 0 0 0 rgba(255,255,255,.6)',
                             animation:'ringPing 1.4s ease-out infinite'}}/>
-                          <span style={{fontFamily:'var(--mono)',fontSize:7,fontWeight:700,
+                          <span style={{fontFamily:'var(--mono)',fontSize:9,fontWeight:700,
                             color:'#fff',letterSpacing:'.04em'}}>VIENDO</span>
                         </div>
                       )}
@@ -2193,7 +2193,7 @@ function MeliPlayAppScreen({ savedMovies=[], onBack, onMovieAdded }) {
                           <path d="M9 1L1 4.5l3.5 1L9 1zM4.5 5.5L6 9l3-8-4.5 4.5z"
                             fill="#fff" fillRule="evenodd"/>
                         </svg>
-                        <span style={{fontFamily:'var(--mono)',fontSize:7,fontWeight:700,
+                        <span style={{fontFamily:'var(--mono)',fontSize:9,fontWeight:700,
                           color:'#fff',letterSpacing:'.04em',lineHeight:1}}>RECOMENDADO</span>
                       </div>
                     )}
@@ -2218,7 +2218,7 @@ function MeliPlayAppScreen({ savedMovies=[], onBack, onMovieAdded }) {
                           {fr.name}
                         </span>
                       </div>
-                      <div style={{fontFamily:'var(--serif)',fontSize:9,fontWeight:500,
+                      <div style={{fontFamily:'var(--sans)',fontSize:11,fontWeight:500,
                         color:'var(--ink)',lineHeight:1.2,
                         overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
                         {movie.title}
@@ -2393,8 +2393,8 @@ function LiveDemo() {
   const [state, setState]       = useState('home');
   const [savedMovie, setSavedMovie]   = useState(null);
   const [savedMovies, setSavedMovies] = useState([]);
-  const [uiStyle, setUIStyle]   = useState('neuro');
-  const [mode, setMode]         = useState('light');
+  const [uiStyle, setUIStyle]   = useState('flat');
+  const [mode, setMode]         = useState('dark');
   const [compartirToast, setCompartirToast] = useState(false);
   const timeouts   = useRef([]);
   const prevStateRef = useRef('home');
