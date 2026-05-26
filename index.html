@@ -511,7 +511,7 @@ function Widget({ withBadge=false, shimmer=false, savedMovie=null, pressed=null,
           <SearchIcon size={14} color="#fff" weight={2.5}/> Buscar
         </button>
         <button type="button" onClick={() => onTap?.('compartir')} data-action="compartir" style={{
-          width:'100%',height:38,borderRadius:10,background:'var(--btn-s-bg)',border:'none',cursor:'pointer',
+          width:'100%',height:42,borderRadius:10,background:'var(--btn-s-bg)',border:'none',cursor:'pointer',
           display:'flex',alignItems:'center',justifyContent:'center',gap:7,
           fontFamily:'var(--sans)',fontSize:14,fontWeight:500,color:'var(--ink)',letterSpacing:'-.01em',
           transform:pressed==='compartir'?'scale(.97)':'scale(1)',
@@ -652,8 +652,8 @@ function HomeScreen({ withBadge=false, shimmer=false, savedMovie=null, widgetPre
 function AddButton({ added, animating, onTap }) {
   const { ink } = useTheme();
   return (
-    <div onClick={e => { e.stopPropagation(); onTap(); }} style={{
-      height:28, width:added?84:28, borderRadius:14,
+    <div role="button" aria-label="Guardar en mi lista" onClick={e => { e.stopPropagation(); onTap(); }} style={{
+      height:36, width:added?84:36, borderRadius:18,
       background:added?TERRA:'var(--add-bg)',
       display:'flex',alignItems:'center',justifyContent:'center',gap:4,
       marginTop:4,flexShrink:0,
@@ -694,8 +694,8 @@ function CardAddButton({ added, onAdd }) {
 
   const showPill = added && expanded;
   return (
-    <div onClick={handleClick} style={{
-      height:28, width: showPill ? 88 : 28, borderRadius:14,
+    <div role="button" aria-label="Añadir a mi lista" onClick={handleClick} style={{
+      height:36, width: showPill ? 88 : 36, borderRadius:18,
       background: added ? TERRA : 'var(--add-bg)',
       display:'flex', alignItems:'center', justifyContent:'center', gap:4,
       flexShrink:0, cursor: added ? 'default' : 'pointer', overflow:'hidden',
@@ -757,7 +757,7 @@ function ResultRow({ movie, delay=0, added, onPlusTap, actionSlot, deleting=fals
         <div style={{display:'flex',alignItems:'center',gap:6,fontFamily:'var(--sans)',fontSize:11,color:'var(--ink-sub)',flexWrap:'nowrap'}}>
           <span style={{fontSize:11}}>{movie.year}</span>
           <span style={{width:3,height:3,borderRadius:'50%',background:'var(--ink-sub)',flexShrink:0,display:'inline-block'}}/>
-          <span style={{padding:'1px 6px',borderRadius:4,background:'rgba(200,82,42,.1)',
+          <span style={{padding:'1px 6px',borderRadius:4,background:'rgba(212,87,46,.15)',
             color:TERRA,fontWeight:600,fontSize:10,letterSpacing:'.01em',flexShrink:0}}>{movie.genre}</span>
         </div>
       </div>
@@ -789,9 +789,9 @@ function ConfirmationBanner({ movie, animate=true, onHidden }) {
         <Poster movie={movie} size={36} radius={4}/>
         <div style={{flex:1}}>
           <div style={{fontFamily:'var(--sans)',fontSize:14,fontWeight:600,color:'#F5F0E8',letterSpacing:'-.01em'}}>Guardado en tu lista</div>
-          <div style={{fontFamily:'var(--serif)',fontSize:12,color:'rgba(245,240,232,.6)',fontStyle:'italic',marginTop:1}}>{movie.title}</div>
+          <div style={{fontFamily:'var(--serif)',fontSize:12,color:'rgba(255,255,255,.9)',fontStyle:'italic',marginTop:1}}>{movie.title}</div>
         </div>
-        <div style={{width:28,height:28,borderRadius:'50%',background:TERRA,display:'flex',alignItems:'center',justifyContent:'center'}}>
+        <div style={{width:36,height:36,borderRadius:'50%',background:TERRA,display:'flex',alignItems:'center',justifyContent:'center'}}>
           <svg width="14" height="14" viewBox="0 0 14 14">
             <path d="M3 7l3 3 5-6" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"
               style={{strokeDasharray:16,strokeDashoffset:animate?16:0,
@@ -1033,7 +1033,7 @@ function SearchSheetInteractive({ onResultTap, onDismiss }) {
           />
         </div>
         {/* X — hides keyboard; search bar stays; back arrow closes entirely */}
-        <div onMouseDown={e => {
+        <div role="button" aria-label="Cerrar búsqueda" onMouseDown={e => {
           e.preventDefault();
           handleQueryChange('');
           setKbVisible(false);
@@ -1476,7 +1476,7 @@ function MeliPlaySearchView({ onMovieAdded, onKbChange }) {
           />
         </div>
         {/* X — hides keyboard and brings menu back */}
-        <div onMouseDown={e => {
+        <div role="button" aria-label="Cerrar búsqueda" onMouseDown={e => {
           e.preventDefault();
           handleQueryChange('');
           setKbVis(false);
@@ -1643,8 +1643,8 @@ function FriendProfileScreen({ friend, movies, onBack }) {
       {/* Header */}
       <div style={{flexShrink:0, display:'flex', alignItems:'center',
         padding:'2px 20px 12px'}}>
-        <button onClick={handleBack} style={{background:'none',border:'none',cursor:'pointer',
-          width:32,height:32,display:'flex',alignItems:'center',justifyContent:'center',
+        <button onClick={handleBack} aria-label="Volver" style={{background:'none',border:'none',cursor:'pointer',
+          width:44,height:44,display:'flex',alignItems:'center',justifyContent:'center',
           borderRadius:8,padding:0,flexShrink:0}}>
           <svg width="10" height="17" viewBox="0 0 10 17" fill="none">
             <path d="M8.5 1.5L2 8.5L8.5 15.5" stroke={ink} strokeWidth="2.2"
@@ -1680,7 +1680,7 @@ function FriendProfileScreen({ friend, movies, onBack }) {
               <div style={{display:'flex',gap:8,alignItems:'center'}}>
                 {/* + add button */}
                 <button onClick={() => setAdded(a => !a)} style={{
-                  width:34,height:34,borderRadius:'50%',flexShrink:0,cursor:'pointer',
+                  width:44,height:44,borderRadius:'50%',flexShrink:0,cursor:'pointer',
                   border:'1.5px solid rgba(255,255,255,.55)',
                   background: added ? TERRA : 'rgba(255,255,255,.15)',
                   backdropFilter:'blur(8px)',
@@ -1760,7 +1760,7 @@ function FriendProfileScreen({ friend, movies, onBack }) {
             </div>
             <div style={{flex:1}}>
               <div style={{fontFamily:'var(--sans)',fontSize:13,fontWeight:600,color:'#fff'}}>Añadido a tu lista ✓</div>
-              <div style={{fontFamily:'var(--sans)',fontSize:11,color:'rgba(255,255,255,.65)',lineHeight:1.4,marginTop:1,
+              <div style={{fontFamily:'var(--sans)',fontSize:11,color:'rgba(255,255,255,.82)',lineHeight:1.4,marginTop:1,
                 overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{toast}</div>
             </div>
           </div>
@@ -1844,8 +1844,8 @@ function MiPerfilView({ featured, loadingFt }) {
           <ResultRow key={m.id} movie={m} delay={i*.06}
             deleting={!!deletingIds[m.id]}
             actionSlot={
-              <div onClick={() => handleDelete(m)} style={{
-                width:28, height:28, borderRadius:14, flexShrink:0, cursor:'pointer',
+              <div onClick={() => handleDelete(m)} role="button" aria-label="Eliminar de mi lista" style={{
+                width:36, height:36, borderRadius:18, flexShrink:0, cursor:'pointer',
                 background:'var(--add-bg)', boxShadow:'var(--add-sh)',
                 display:'flex', alignItems:'center', justifyContent:'center',
                 transition:'background .2s',
@@ -1920,7 +1920,7 @@ function MiPerfilView({ featured, loadingFt }) {
             display:'flex',alignItems:'center',gap:12,
             boxShadow:'0 8px 32px rgba(0,0,0,.35),0 0 0 .5px rgba(255,255,255,.1)',
             backdropFilter:'blur(16px)',WebkitBackdropFilter:'blur(16px)'}}>
-            <div style={{width:32,height:32,borderRadius:8,background:'#555',flexShrink:0,
+            <div style={{width:32,height:32,borderRadius:8,background:'var(--divider)',flexShrink:0,
               display:'flex',alignItems:'center',justifyContent:'center'}}>
               <svg width="13" height="14" viewBox="0 0 13 14" fill="none">
                 <path d="M1 3.5h11M4.5 3.5V2.5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v1M5.5 6.5v4M7.5 6.5v4M2 3.5l.7 8a1 1 0 0 0 1 .9h5.6a1 1 0 0 0 1-.9l.7-8"
@@ -1929,7 +1929,7 @@ function MiPerfilView({ featured, loadingFt }) {
             </div>
             <div style={{flex:1}}>
               <div style={{fontFamily:'var(--sans)',fontSize:13,fontWeight:600,color:'#fff'}}>Eliminado de tu lista</div>
-              <div style={{fontFamily:'var(--sans)',fontSize:11,color:'rgba(255,255,255,.65)',lineHeight:1.4,marginTop:1,
+              <div style={{fontFamily:'var(--sans)',fontSize:11,color:'rgba(255,255,255,.82)',lineHeight:1.4,marginTop:1,
                 overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{toast?.title}</div>
             </div>
           </div>
@@ -1949,6 +1949,8 @@ function MeliPlayAppScreen({ savedMovies=[], onBack, onMovieAdded }) {
   const [selectedFriend, setSelectedFriend]   = useState(null);
   const [addedMovies, setAddedMovies]         = useState({});
   const [homeToast, setHomeToast]             = useState(null);
+  const [bannerDot, setBannerDot]             = useState(0);
+  const bannerRef = useRef(null);
 
   const handleHomeAdd = (m) => {
     if (addedMovies[m.id]) return;
@@ -1973,6 +1975,17 @@ function MeliPlayAppScreen({ savedMovies=[], onBack, onMovieAdded }) {
     )).then(res => { if (!cancelled) { setFeatured(res.filter(Boolean)); setLoadingFt(false); } });
     return () => { cancelled = true; };
   }, []);
+
+  useEffect(() => {
+    const el = bannerRef.current;
+    if (!el) return;
+    const onScroll = () => {
+      const idx = Math.round(el.scrollLeft / 284);
+      setBannerDot(Math.min(idx, Math.max(0, featured.length - 1)));
+    };
+    el.addEventListener('scroll', onScroll, { passive: true });
+    return () => el.removeEventListener('scroll', onScroll);
+  }, [featured.length]);
 
   const handleBack = () => { setClosing(true); setTimeout(() => onBack(), 360); };
 
@@ -2002,8 +2015,8 @@ function MeliPlayAppScreen({ savedMovies=[], onBack, onMovieAdded }) {
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',
           padding:'2px 20px 10px'}}>
           {activeTab === 'buscar' ? (
-            <button onClick={() => setActiveTab('inicio')} style={{background:'none',border:'none',cursor:'pointer',
-              width:32,height:32,display:'flex',alignItems:'center',justifyContent:'center',
+            <button onClick={() => setActiveTab('inicio')} aria-label="Volver" style={{background:'none',border:'none',cursor:'pointer',
+              width:44,height:44,display:'flex',alignItems:'center',justifyContent:'center',
               borderRadius:8,padding:0,flexShrink:0}}>
               <svg width="10" height="17" viewBox="0 0 10 17" fill="none">
                 <path d="M8.5 1.5L2 8.5L8.5 15.5" stroke={ink} strokeWidth="2.2"
@@ -2011,10 +2024,10 @@ function MeliPlayAppScreen({ savedMovies=[], onBack, onMovieAdded }) {
               </svg>
             </button>
           ) : (
-            <div style={{width:32,height:32,flexShrink:0}}/>
+            <div style={{width:44,height:44,flexShrink:0}}/>
           )}
           <MeliMark size={19} dotColor={TERRA}/>
-          <div style={{width:32,height:32,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+          <div style={{width:44,height:44,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
               <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" stroke={ink} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/>
               <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"
@@ -2052,7 +2065,7 @@ function MeliPlayAppScreen({ savedMovies=[], onBack, onMovieAdded }) {
             ))}
           </div>
         ) : (
-          <div className="no-scrollbar" style={{display:'flex',gap:12,overflowX:'auto',padding:'24px 20px 4px'}}>
+          <div ref={bannerRef} className="no-scrollbar" style={{display:'flex',gap:12,overflowX:'auto',padding:'24px 20px 4px'}}>
             {featured.map((m,i) => {
               const CONTACTS = [4,2,6,1,3,5,7];
               const MATCHES  = [94,87,91,78,96,83,89];
@@ -2077,8 +2090,8 @@ function MeliPlayAppScreen({ savedMovies=[], onBack, onMovieAdded }) {
                       textShadow:'0 1px 4px rgba(0,0,0,.5)',
                       overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{m.title}</div>
                     <div style={{display:'flex',alignItems:'center',gap:6,flexWrap:'nowrap'}}>
-                      <div style={{padding:'2px 8px',borderRadius:4,background:'rgba(255,255,255,0.92)',flexShrink:0,
-                        fontFamily:'var(--mono)',fontSize:9,fontWeight:700,color:'#0F0F0F',letterSpacing:'.02em'}}>
+                      <div style={{padding:'2px 8px',borderRadius:4,background:TERRA,flexShrink:0,
+                        fontFamily:'var(--mono)',fontSize:9,fontWeight:700,color:'#1A0A05',letterSpacing:'.02em'}}>
                         {match}% match
                       </div>
                       <div style={{display:'flex',alignItems:'center',gap:3,minWidth:0}}>
@@ -2088,7 +2101,7 @@ function MeliPlayAppScreen({ savedMovies=[], onBack, onMovieAdded }) {
                           <path d="M1 10.5c0-2.2 1.8-4 4-4" stroke="rgba(255,255,255,.78)" strokeWidth="1.3" strokeLinecap="round"/>
                           <path d="M5.5 10.5c0-2.2 1.8-4 4-4s4 1.8 4 4" stroke="rgba(255,255,255,.78)" strokeWidth="1.3" strokeLinecap="round"/>
                         </svg>
-                        <span style={{fontFamily:'var(--sans)',fontSize:9,color:'rgba(255,255,255,.82)',
+                        <span style={{fontFamily:'var(--sans)',fontSize:9,color:'#F5F0E8',
                           overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
                           Visto por <b style={{fontWeight:600}}>{contacts}</b> de tus contactos
                         </span>
@@ -2101,11 +2114,26 @@ function MeliPlayAppScreen({ savedMovies=[], onBack, onMovieAdded }) {
           </div>
         )}
 
+        {/* Banner pagination dots */}
+        {!loadingFt && featured.length > 1 && (
+          <div style={{display:'flex',justifyContent:'center',alignItems:'center',gap:5,marginTop:10}}>
+            {featured.map((_,i) => (
+              <div key={i} style={{
+                height:5, borderRadius:3,
+                width: i===bannerDot ? 16 : 5,
+                background: i===bannerDot ? TERRA : 'var(--ink-sub)',
+                opacity: i===bannerDot ? 1 : 0.3,
+                transition:'width .3s cubic-bezier(.34,1.56,.64,1),background .2s,opacity .2s',
+              }}/>
+            ))}
+          </div>
+        )}
+
         {/* Familia & Amigos */}
-        <div style={{marginTop:24}}>
+        <div style={{marginTop:32}}>
           {/* Section header */}
           <div style={{padding:'0 20px',marginBottom:12}}>
-            <div style={{height:16,marginBottom:3}}/>
+            <div style={{height:8,marginBottom:3}}/>
             <span style={{fontFamily:'var(--sans)',fontSize:16,fontWeight:700,
               color:'var(--ink)',letterSpacing:'-.01em'}}>Familia &amp; Amigos</span>
           </div>
@@ -2133,7 +2161,7 @@ function MeliPlayAppScreen({ savedMovies=[], onBack, onMovieAdded }) {
               ))}
             </div>
           ) : (
-            <div className="no-scrollbar" style={{display:'flex',gap:12,overflowX:'auto',padding:'0 20px 8px'}}>
+            <div className="no-scrollbar" style={{display:'flex',gap:12,overflowX:'auto',padding:'0 20px 8px 20px'}}>
               {[
                 {name:'Carlos', initials:'CA', status:'viendo',   mi:1, recommended:true},
                 {name:'Ana',    initials:'AN', status:'viendo',   mi:4},
@@ -2145,7 +2173,7 @@ function MeliPlayAppScreen({ savedMovies=[], onBack, onMovieAdded }) {
                 if (!movie) return null;
                 const isLive = fr.status === 'viendo';
                 return (
-                  <div key={fr.name} onClick={() => setSelectedFriend(fr)}
+                  <div key={fr.name} role="button" aria-label={`Ver perfil de ${fr.name}`} onClick={() => setSelectedFriend(fr)}
                     style={{
                     flexShrink:0, width:108, borderRadius:12, overflow:'hidden',
                     boxShadow:'var(--row-sh)', cursor:'pointer',
@@ -2168,7 +2196,7 @@ function MeliPlayAppScreen({ savedMovies=[], onBack, onMovieAdded }) {
                           position:'absolute',top:7,left:7,
                           display:'flex',alignItems:'center',gap:3,
                           padding:'2px 6px',borderRadius:10,
-                          background:'rgba(80,148,100,.90)',
+                          background:'#16A34A',
                           backdropFilter:'blur(4px)',
                         }}>
                           <span style={{width:5,height:5,borderRadius:'50%',background:'#fff',
@@ -2194,7 +2222,7 @@ function MeliPlayAppScreen({ savedMovies=[], onBack, onMovieAdded }) {
                             fill="#fff" fillRule="evenodd"/>
                         </svg>
                         <span style={{fontFamily:'var(--mono)',fontSize:9,fontWeight:700,
-                          color:'#fff',letterSpacing:'.04em',lineHeight:1}}>RECOMENDADO</span>
+                          color:'#1A0A05',letterSpacing:'.04em',lineHeight:1}}>RECOMENDADO</span>
                       </div>
                     )}
 
@@ -2205,7 +2233,7 @@ function MeliPlayAppScreen({ savedMovies=[], onBack, onMovieAdded }) {
                     }}>
                       <div style={{display:'flex',alignItems:'center',gap:5,marginBottom:4}}>
                         <div style={{
-                          width:20,height:20,borderRadius:'50%',background:'var(--grabber)',
+                          width:28,height:28,borderRadius:'50%',background:'var(--grabber)',
                           display:'flex',alignItems:'center',justifyContent:'center',
                           flexShrink:0,border:'1.5px solid var(--device-bg)',
                         }}>
@@ -2233,7 +2261,7 @@ function MeliPlayAppScreen({ savedMovies=[], onBack, onMovieAdded }) {
 
         {/* Para ti */}
         {!loadingFt && featured.length>2 && (
-          <div style={{marginTop:40,paddingBottom:8}}>
+          <div style={{marginTop:32,paddingBottom:8}}>
             <div style={{padding:'0 20px',marginBottom:12}}>
               <span style={{fontFamily:'var(--sans)',fontSize:16,fontWeight:700,
                 color:'var(--ink)',letterSpacing:'-.01em'}}>Para ti</span>
@@ -2248,7 +2276,7 @@ function MeliPlayAppScreen({ savedMovies=[], onBack, onMovieAdded }) {
           </div>
         )}
 
-        <div style={{height:16}}/>
+        <div style={{height:8}}/>
         </>}
 
       </div>
@@ -2270,7 +2298,7 @@ function MeliPlayAppScreen({ savedMovies=[], onBack, onMovieAdded }) {
             </div>
             <div style={{flex:1}}>
               <div style={{fontFamily:'var(--sans)',fontSize:13,fontWeight:600,color:'#fff'}}>Añadido a tu lista ✓</div>
-              <div style={{fontFamily:'var(--sans)',fontSize:11,color:'rgba(255,255,255,.65)',lineHeight:1.4,marginTop:1,
+              <div style={{fontFamily:'var(--sans)',fontSize:11,color:'rgba(255,255,255,.82)',lineHeight:1.4,marginTop:1,
                 overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{homeToast}</div>
             </div>
           </div>
@@ -2281,7 +2309,7 @@ function MeliPlayAppScreen({ savedMovies=[], onBack, onMovieAdded }) {
       <div style={{
         position:'absolute',bottom:0,left:0,right:0,height:76,
         display:'flex',alignItems:'center',justifyContent:'space-between',
-        padding:'0 16px 12px',
+        padding:'0 20px 12px',
         zIndex:20,
         pointerEvents:'none',
         transform: (activeTab==='buscar' && searchKbVisible) ? 'translateY(100%)' : 'translateY(0)',
