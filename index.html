@@ -51,7 +51,7 @@
       --status-c:    #000000;
       --icon-label:  #0F0F0F;
       --home-bar:    rgba(0,0,0,.25);
-      --bd-filter:   brightness(.85);
+      --bd-filter:   blur(10px) brightness(.75);
     }
     *{box-sizing:border-box;margin:0;padding:0}
     html,body{
@@ -61,6 +61,7 @@
     }
     #root{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:60px 20px}
     .no-scrollbar::-webkit-scrollbar{display:none}.no-scrollbar{scrollbar-width:none}
+    @keyframes slideUpFade{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
     @keyframes sheetUp   {from{transform:translateY(100%)}to{transform:translateY(0)}}
     @keyframes sheetDown {from{transform:translateY(0)}to{transform:translateY(100%)}}
     @keyframes fadeUpIn  {from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
@@ -77,6 +78,13 @@
     @keyframes ringPing {0%{transform:scale(.6);opacity:.6}100%{transform:scale(2);opacity:0}}
     @keyframes plusBounce{0%{transform:scale(1)}35%{transform:scale(1.45)}65%{transform:scale(.82)}100%{transform:scale(1)}}
     @keyframes pulseSearch{0%,100%{transform:scale(1)}50%{transform:scale(1.015)}}
+    @keyframes appLaunch  {from{opacity:0;transform:scale(.92)}to{opacity:1;transform:scale(1)}}
+    @keyframes appBack    {from{transform:translateX(0)}to{transform:translateX(105%)}}
+    @keyframes pushIn     {from{transform:translateX(100%)}to{transform:translateX(0)}}
+    @keyframes pushOut    {from{transform:translateX(0)}to{transform:translateX(100%)}}
+    @keyframes caretBlink {0%,49%{opacity:1}50%,100%{opacity:0}}
+    .dark-search-input::placeholder{color:#8E8E93}
+    .dark-search-input{color:#fff}
   </style>
 </head>
 <body>
@@ -85,6 +93,179 @@
 const { useState, useEffect, useRef, useContext, createContext } = React;
 const TERRA = '#C8522A';
 const OMDB_KEY = 'ab504452';
+
+// ── Smart search knowledge base ───────────────────────────────────────────
+// Each entry: names[] (all accepted spellings/aliases), display (shown in UI), works[]
+const ACTOR_ENTRIES = [
+  { names:['robert downey jr','rdj','robert jr'],            display:'Robert Downey Jr.',
+    works:['Iron Man','Iron Man 2','Iron Man 3','Avengers: Endgame','Sherlock Holmes','Tropic Thunder','The Judge','Chaplin'] },
+  { names:['tom hanks'],                                     display:'Tom Hanks',
+    works:['Forrest Gump','Cast Away','The Terminal','Saving Private Ryan','Philadelphia','Big','The Green Mile','Cast Away'] },
+  { names:['scarlett johansson','scarlett'],                 display:'Scarlett Johansson',
+    works:['Black Widow','Lost in Translation','Marriage Story','Her','Jojo Rabbit','Lucy','The Avengers','Ghost in the Shell'] },
+  { names:['will smith','will'],                             display:'Will Smith',
+    works:['Ali','Bad Boys','Men in Black','The Pursuit of Happyness','Focus','I Robot','Hitch','King Richard','Concussion'] },
+  { names:['leonardo dicaprio','leo dicaprio','dicaprio','leo'],display:'Leonardo DiCaprio',
+    works:['Inception','The Wolf of Wall Street','The Revenant','Titanic','Shutter Island','The Departed','Django Unchained','Catch Me If You Can'] },
+  { names:['brad pitt'],                                     display:'Brad Pitt',
+    works:['Fight Club','Se7en','Inglourious Basterds','Once Upon a Time in Hollywood','Troy','Ocean\'s Eleven','Moneyball','Fury'] },
+  { names:['morgan freeman'],                                display:'Morgan Freeman',
+    works:['Se7en','The Shawshank Redemption','Million Dollar Baby','Driving Miss Daisy','Bruce Almighty','Invictus','Lucy','The Dark Knight Rises'] },
+  { names:['denzel washington','denzel'],                    display:'Denzel Washington',
+    works:['Training Day','Malcolm X','The Equalizer','Glory','Philadelphia','Man on Fire','Flight','Fences','The Book of Eli'] },
+  { names:['christian bale'],                                display:'Christian Bale',
+    works:['Batman Begins','The Dark Knight','American Psycho','The Prestige','The Big Short','Ford v Ferrari','Vice','The Fighter'] },
+  { names:['matt damon'],                                    display:'Matt Damon',
+    works:['Good Will Hunting','The Martian','The Bourne Identity','Interstellar','Elysium','Ocean\'s Eleven','The Departed','Promised Land'] },
+  { names:['ryan reynolds'],                                 display:'Ryan Reynolds',
+    works:['Deadpool','Deadpool 2','Free Guy','The Proposal','Detective Pikachu','Red Notice','The Hitman\'s Bodyguard','6 Underground'] },
+  { names:['chris evans','captain america'],                 display:'Chris Evans',
+    works:['Captain America: The First Avenger','Knives Out','Avengers: Endgame','Snowpiercer','Scott Pilgrim vs. the World','Gifted'] },
+  { names:['dwayne johnson','the rock','dwayne'],            display:'Dwayne Johnson',
+    works:['Jumanji: Welcome to the Jungle','Moana','Hobbs & Shaw','Black Adam','San Andreas','Fast Five','Baywatch'] },
+  { names:['johnny depp'],                                   display:'Johnny Depp',
+    works:['Pirates of the Caribbean: The Curse of the Black Pearl','Edward Scissorhands','Fear and Loathing in Las Vegas','Sweeney Todd','Public Enemies','Alice in Wonderland'] },
+  { names:['natalie portman'],                               display:'Natalie Portman',
+    works:['Black Swan','Thor','V for Vendetta','Léon: The Professional','Jackie','Annihilation','Closer'] },
+  { names:['meryl streep'],                                  display:'Meryl Streep',
+    works:['The Devil Wears Prada','Kramer vs. Kramer','Sophie\'s Choice','The Iron Lady','Florence Foster Jenkins','Mamma Mia','Doubt'] },
+  { names:['jennifer lawrence','j-law'],                     display:'Jennifer Lawrence',
+    works:['The Hunger Games','Silver Linings Playbook','X-Men: First Class','American Hustle','Joy','mother!','Red Sparrow'] },
+  { names:['emma stone'],                                    display:'Emma Stone',
+    works:['La La Land','Easy A','Birdman','The Favourite','Cruella','Poor Things','The Amazing Spider-Man'] },
+  { names:['samuel l jackson','samuel jackson','sam jackson'],display:'Samuel L. Jackson',
+    works:['Pulp Fiction','Django Unchained','Die Hard with a Vengeance','Jackie Brown','Unbreakable','The Hateful Eight','Avengers: Age of Ultron'] },
+  { names:['cate blanchett'],                                display:'Cate Blanchett',
+    works:['The Lord of the Rings: The Fellowship of the Ring','Elizabeth','Blue Jasmine','Carol','Thor: Ragnarok','Tár','Notes on a Scandal'] },
+  { names:['anne hathaway'],                                 display:'Anne Hathaway',
+    works:['Interstellar','The Devil Wears Prada','Les Misérables','The Dark Knight Rises','Ocean\'s 8','The Princess Diaries','Brokeback Mountain'] },
+  { names:['tom cruise'],                                    display:'Tom Cruise',
+    works:['Top Gun','Mission: Impossible','Jerry Maguire','Minority Report','Edge of Tomorrow','Collateral','Magnolia','A Few Good Men'] },
+  { names:['keanu reeves'],                                  display:'Keanu Reeves',
+    works:['The Matrix','The Matrix Reloaded','John Wick','John Wick: Chapter 2','Speed','Constantine','Point Break','Much Ado About Nothing'] },
+  { names:['jim carrey'],                                    display:'Jim Carrey',
+    works:['The Mask','Liar Liar','Eternal Sunshine of the Spotless Mind','The Truman Show','Ace Ventura: Pet Detective','Dumb and Dumber','Bruce Almighty'] },
+  { names:['harrison ford'],                                 display:'Harrison Ford',
+    works:['Star Wars: A New Hope','Raiders of the Lost Ark','Blade Runner','The Fugitive','Air Force One','Indiana Jones and the Last Crusade','Witness'] },
+  { names:['jack nicholson'],                                display:'Jack Nicholson',
+    works:['The Shining','As Good as It Gets','One Flew Over the Cuckoo\'s Nest','A Few Good Men','The Departed','Chinatown','Batman'] },
+  { names:['al pacino'],                                     display:'Al Pacino',
+    works:['The Godfather','Scarface','Heat','Serpico','Dog Day Afternoon','Carlito\'s Way','The Irishman','Scent of a Woman'] },
+  { names:['robert de niro','robert deniro','de niro'],      display:'Robert De Niro',
+    works:['Goodfellas','Taxi Driver','Raging Bull','The Godfather Part II','Casino','The Irishman','Cape Fear','Heat'] },
+  { names:['adam sandler'],                                  display:'Adam Sandler',
+    works:['Uncut Gems','The Wedding Singer','Big Daddy','Punch-Drunk Love','Happy Gilmore','Hustle','The Waterboy','Billy Madison'] },
+  { names:['jennifer aniston'],                              display:'Jennifer Aniston',
+    works:['Marley & Me','The Break-Up','Horrible Bosses','We\'re the Millers','Cake','Murder Mystery','Dumplin\'','Friends with Money'] },
+  { names:['angelina jolie'],                                display:'Angelina Jolie',
+    works:['Lara Croft: Tomb Raider','Mr. & Mrs. Smith','Maleficent','Salt','Wanted','Changeling','Gia','Girl Interrupted'] },
+  // ── Steve Carell — all common spellings ──
+  { names:['steve carell','steve carell','steve carrell','steven carell','steven carrell','carell','carrell'],
+    display:'Steve Carell',
+    works:['The Office','The 40-Year-Old Virgin','Little Miss Sunshine','Get Smart','Crazy Stupid Love','Foxcatcher','The Big Short','Beautiful Boy','Date Night','Dinner for Schmucks','Evan Almighty','Dan in Real Life'] },
+  { names:['chris pratt'],                                   display:'Chris Pratt',
+    works:['Guardians of the Galaxy','Avengers: Infinity War','Jurassic World','The Tomorrow War','Passengers','Guardians of the Galaxy Vol. 2'] },
+  { names:['zendaya'],                                       display:'Zendaya',
+    works:['Euphoria','Dune','Spider-Man: Homecoming','Malcolm & Marie','The Greatest Showman','Dune: Part Two'] },
+  { names:['timothee chalamet','timothée chalamet','timothee','chalamet'],display:'Timothée Chalamet',
+    works:['Dune','Call Me by Your Name','Little Women','The French Dispatch','Wonka','Beautiful Boy','Bones and All'] },
+  { names:['margot robbie','margot'],                        display:'Margot Robbie',
+    works:['Barbie','I, Tonya','The Wolf of Wall Street','Suicide Squad','Once Upon a Time in Hollywood','Bombshell','Birds of Prey'] },
+  { names:['joaquin phoenix'],                               display:'Joaquin Phoenix',
+    works:['Joker','Her','Walk the Line','Gladiator','The Master','You Were Never Really Here','Beau Is Afraid'] },
+  { names:['benedict cumberbatch'],                          display:'Benedict Cumberbatch',
+    works:['Doctor Strange','Sherlock','Avengers: Infinity War','The Imitation Game','1917','The Power of the Dog','12 Years a Slave'] },
+  { names:['pedro pascal'],                                  display:'Pedro Pascal',
+    works:['The Mandalorian','Narcos','The Last of Us','Wonder Woman 1984','The Unbearable Weight of Massive Talent','Strange Way of Life'] },
+  { names:['florence pugh'],                                 display:'Florence Pugh',
+    works:['Little Women','Midsommar','Black Widow','Oppenheimer','The Wonder','Fighting with My Family','Don\'t Worry Darling'] },
+  { names:['paul rudd'],                                     display:'Paul Rudd',
+    works:['Ant-Man','Clueless','This Is 40','I Love You Man','Role Models','Ant-Man and the Wasp','Knocked Up'] },
+  { names:['viola davis'],                                   display:'Viola Davis',
+    works:['Fences','How to Get Away with Murder','The Help','Ma Rainey\'s Black Bottom','Widows','Prisoners','Doubt'] },
+  { names:['idris elba'],                                    display:'Idris Elba',
+    works:['Luther','The Wire','Beasts of No Nation','Thor','Pacific Rim','Zootopia','Molly\'s Game'] },
+  { names:['michael fassbender','fassbender'],               display:'Michael Fassbender',
+    works:['X-Men: First Class','12 Years a Slave','Prometheus','Steve Jobs','Shame','Inglourious Basterds','A Dangerous Method'] },
+  { names:['chadwick boseman'],                              display:'Chadwick Boseman',
+    works:['Black Panther','Avengers: Infinity War','Ma Rainey\'s Black Bottom','Get on Up','21 Bridges','Marshall'] },
+  { names:['chris hemsworth'],                               display:'Chris Hemsworth',
+    works:['Thor','Avengers: Endgame','Extraction','Ghostbusters','Spiderhead','Bad Times at the El Royale'] },
+];
+
+const SEMANTIC_DB = [
+  { keys:['run','ran','running','ping pong','life is like','box of chocolates','mama always said'],   title:'Forrest Gump' },
+  { keys:['dream','layer','subconscious','totem','spinning top','dream within','limbo','extraction'],  title:'Inception' },
+  { keys:['wormhole','black hole','time dilation','relativity','saturn','tars','cooper','fifth dimension'], title:'Interstellar' },
+  { keys:['soap','fight club','tyler','durden','first rule','project mayhem','anarchy'],              title:'Fight Club' },
+  { keys:['joker','gotham','dark knight','batman','why so serious','pencil','harvey dent'],           title:'The Dark Knight' },
+  { keys:['iron man','tony stark','billionaire','arc reactor','jarvis','genius'],                     title:'Iron Man' },
+  { keys:['wizard','hogwarts','wand','magic school','sorting hat','voldemort','hermione','dumbledore'], title:'Harry Potter and the Sorcerer\'s Stone' },
+  { keys:['ring','shire','hobbit','frodo','mordor','gandalf','precious','bilbo','fellowship'],        title:'The Lord of the Rings: The Fellowship of the Ring' },
+  { keys:['dinosaur','park','island','dna','velociraptor','spared no expense','jurassic','amber'],    title:'Jurassic Park' },
+  { keys:['matrix','red pill','blue pill','simulation','neo','the one','morpheus','oracle'],          title:'The Matrix' },
+  { keys:['frozen','elsa','let it go','snow queen','arendelle','olaf','ice castle'],                  title:'Frozen' },
+  { keys:['toy','cowboy','woody','buzz lightyear','infinity and beyond','andy','potato head'],        title:'Toy Story' },
+  { keys:['lion','king','simba','hakuna matata','pride rock','mufasa','rafiki','circle of life'],     title:'The Lion King' },
+  { keys:['titanic','ship','iceberg','sink','jack','rose','never let go','king of the world'],        title:'Titanic' },
+  { keys:['prison','shawshank','hope','redemption','zihuatanejo','warden','crawl through'],           title:'The Shawshank Redemption' },
+  { keys:['thanos','snap','infinity','end game','i am inevitable','i am iron man','gauntlet'],        title:'Avengers: Endgame' },
+  { keys:['alien','xenomorph','ripley','chest','face hugger','in space','no one can hear'],           title:'Alien' },
+  { keys:['shark','beach','jaws','bigger boat','amity','chief brody','swim'],                         title:'Jaws' },
+  { keys:['serial killer','silence','lamb','hannibal','lecter','fbi','clarice','chianti','liver'],    title:'The Silence of the Lambs' },
+  { keys:['death star','force','darth vader','luke','jedi','lightsaber','i am your father'],          title:'Star Wars: A New Hope' },
+  { keys:['spider','peter parker','web','uncle ben','great power','great responsibility'],            title:'Spider-Man' },
+  { keys:['mafia','offer they can\'t refuse','vito','corleone','sicily','family','don','godfather'],  title:'The Godfather' },
+  { keys:['scarface','cocaine','montana','say hello','miami','drug lord','cartel','cuban'],           title:'Scarface' },
+  { keys:['blade runner','replicant','android','empathy test','tears in rain'],                       title:'Blade Runner' },
+  { keys:['pirate','captain','caribbean','sparrow','black pearl','rum','davey jones','compass'],      title:'Pirates of the Caribbean: The Curse of the Black Pearl' },
+  { keys:['office','michael scott','dwight','pam','jim','dunder mifflin','paper company','that\'s what she said'], title:'The Office' },
+  { keys:['breaking bad','walter white','heisenberg','meth','jesse','i am the danger'],               title:'Breaking Bad' },
+  { keys:['stranger things','demogorgon','upside down','eleven','hawkins','mind flayer'],             title:'Stranger Things' },
+];
+
+// Bigram similarity for fuzzy name matching
+function bigramSim(a, b) {
+  if (a === b) return 1;
+  const bg = s => { const set = new Set(); for (let i=0; i<s.length-1; i++) set.add(s.slice(i,i+2)); return set; };
+  const aB = bg(a), bB = bg(b);
+  if (!aB.size || !bB.size) return 0;
+  let inter = 0; aB.forEach(g => { if (bB.has(g)) inter++; });
+  return (2*inter) / (aB.size + bB.size);
+}
+
+function matchActor(query) {
+  const q = query.toLowerCase().trim();
+  if (q.length < 3) return null;
+  const qWords = q.split(/\s+/).filter(w => w.length > 1);
+  let best = null, bestScore = 0;
+  for (const entry of ACTOR_ENTRIES) {
+    for (const name of entry.names) {
+      const nWords = name.split(/\s+/).filter(w => w.length > 1);
+      if (!nWords.length) continue;
+      let matched = 0;
+      for (const nw of nWords) {
+        if (qWords.some(qw => nw===qw || nw.includes(qw) || qw.includes(nw) || bigramSim(nw,qw)>=0.72)) matched++;
+      }
+      const score = matched / nWords.length;
+      const minMatch = Math.min(2, nWords.length);
+      if (score > bestScore && score >= 0.6 && matched >= minMatch) {
+        bestScore = score; best = { actor: entry.display, movies: entry.works };
+      }
+    }
+  }
+  return best;
+}
+
+function matchSemantic(query) {
+  const q = query.toLowerCase();
+  let best = null, bestScore = 0;
+  for (const item of SEMANTIC_DB) {
+    const score = item.keys.filter(k => q.includes(k)).length;
+    if (score > bestScore) { bestScore = score; best = { ...item, score }; }
+  }
+  return bestScore >= 1 ? best : null;
+}
 
 // ── Theme context ──────────────────────────────────────────────────────────
 const ThemeCtx = createContext({ ink:'#0F0F0F', isDark:false });
@@ -110,7 +291,7 @@ const PRESETS = {
     '--banner-bg':'#2A2520','--ink':'#0F0F0F','--ink-sub':'rgba(15,15,15,.45)',
     '--grabber':'rgba(15,15,15,.18)','--divider':'rgba(15,15,15,.06)',
     '--ri-bg':'rgba(200,82,42,.12)','--clr-btn':'rgba(15,15,15,.18)',
-    '--status-c':'#000','--icon-label':'#0F0F0F','--home-bar':'rgba(0,0,0,.25)','--bd-filter':'brightness(.85)',
+    '--status-c':'#000','--icon-label':'#0F0F0F','--home-bar':'rgba(0,0,0,.25)','--bd-filter':'blur(10px) brightness(.75)',
     _ink:'#0F0F0F', _dark:false,
   },
   'neuro-dark': {
@@ -131,7 +312,8 @@ const PRESETS = {
     '--banner-bg':'#3A332D','--ink':'#F5F0E8','--ink-sub':'rgba(245,240,232,.45)',
     '--grabber':'rgba(245,240,232,.2)','--divider':'rgba(245,240,232,.08)',
     '--ri-bg':'rgba(200,82,42,.2)','--clr-btn':'rgba(245,240,232,.2)',
-    '--status-c':'#fff','--icon-label':'#F5F0E8','--home-bar':'rgba(255,255,255,.3)','--bd-filter':'brightness(.55)',
+    '--kb-bg':'#1C1914','--kb-action':'#141108','--key-bg':'#2C2620',
+    '--status-c':'#fff','--icon-label':'#F5F0E8','--home-bar':'rgba(255,255,255,.3)','--bd-filter':'blur(10px) brightness(.5)',
     _ink:'#F5F0E8', _dark:true,
   },
   'glass-light': {
@@ -169,6 +351,7 @@ const PRESETS = {
     '--banner-bg':'rgba(245,240,232,.12)','--ink':'#F5F0E8','--ink-sub':'rgba(245,240,232,.45)',
     '--grabber':'rgba(245,240,232,.2)','--divider':'rgba(245,240,232,.08)',
     '--ri-bg':'rgba(200,82,42,.2)','--clr-btn':'rgba(245,240,232,.2)',
+    '--kb-bg':'rgba(20,16,12,.92)','--kb-action':'rgba(12,10,8,.92)','--key-bg':'rgba(48,42,36,.95)',
     '--status-c':'#fff','--icon-label':'rgba(255,255,255,.95)','--home-bar':'rgba(255,255,255,.3)','--bd-filter':'blur(16px) brightness(.4)',
     _ink:'#F5F0E8', _dark:true,
   },
@@ -188,7 +371,7 @@ const PRESETS = {
     '--banner-bg':'#0F0F0F','--ink':'#0F0F0F','--ink-sub':'rgba(15,15,15,.45)',
     '--grabber':'rgba(15,15,15,.12)','--divider':'rgba(15,15,15,.07)',
     '--ri-bg':'rgba(200,82,42,.1)','--clr-btn':'rgba(15,15,15,.12)',
-    '--status-c':'#000','--icon-label':'#0F0F0F','--home-bar':'rgba(0,0,0,.2)','--bd-filter':'brightness(.88)',
+    '--status-c':'#000','--icon-label':'#0F0F0F','--home-bar':'rgba(0,0,0,.2)','--bd-filter':'blur(10px) brightness(.78)',
     _ink:'#0F0F0F', _dark:false,
   },
   'flat-dark': {
@@ -207,7 +390,8 @@ const PRESETS = {
     '--banner-bg':'#2C2820','--ink':'#F5F0E8','--ink-sub':'rgba(245,240,232,.4)',
     '--grabber':'rgba(245,240,232,.15)','--divider':'rgba(245,240,232,.07)',
     '--ri-bg':'rgba(200,82,42,.2)','--clr-btn':'rgba(245,240,232,.18)',
-    '--status-c':'#fff','--icon-label':'#F5F0E8','--home-bar':'rgba(255,255,255,.25)','--bd-filter':'brightness(.5)',
+    '--kb-bg':'#0C0906','--kb-action':'#050402','--key-bg':'#1E1A14',
+    '--status-c':'#fff','--icon-label':'#F5F0E8','--home-bar':'rgba(255,255,255,.25)','--bd-filter':'blur(10px) brightness(.45)',
     _ink:'#F5F0E8', _dark:true,
   },
 };
@@ -290,7 +474,7 @@ function Poster({ movie, size=56, radius=6, withGlow=false }) {
 }
 
 // ── Widget ─────────────────────────────────────────────────────────────────
-function Widget({ withBadge=false, shimmer=false, savedMovie=null, pressed=null }) {
+function Widget({ withBadge=false, shimmer=false, savedMovie=null, pressed=null, onTap }) {
   const { ink } = useTheme();
   return (
     <div style={{
@@ -315,7 +499,7 @@ function Widget({ withBadge=false, shimmer=false, savedMovie=null, pressed=null 
       <MeliMark size={18} dotColor={TERRA}/>
       <div style={{fontFamily:'var(--serif)',fontSize:11.5,fontStyle:'italic',color:'var(--ink-sub)',marginTop:3}}>Tu cine, a mano</div>
       <div style={{marginTop:18,display:'flex',flexDirection:'column',gap:9}}>
-        <button data-action="buscar" style={{
+        <button type="button" onClick={() => onTap?.('buscar')} data-action="buscar" style={{
           width:'100%',height:44,borderRadius:12,background:TERRA,border:'none',cursor:'pointer',
           display:'flex',alignItems:'center',justifyContent:'center',gap:7,
           fontFamily:'var(--sans)',fontSize:15,fontWeight:600,color:'#fff',letterSpacing:'-.01em',
@@ -325,15 +509,21 @@ function Widget({ withBadge=false, shimmer=false, savedMovie=null, pressed=null 
         }}>
           <SearchIcon size={14} color="#fff" weight={2.5}/> Buscar
         </button>
-        <button data-action="escanear" style={{
+        <button type="button" onClick={() => onTap?.('compartir')} data-action="compartir" style={{
           width:'100%',height:38,borderRadius:10,background:'var(--btn-s-bg)',border:'none',cursor:'pointer',
           display:'flex',alignItems:'center',justifyContent:'center',gap:7,
           fontFamily:'var(--sans)',fontSize:14,fontWeight:500,color:'var(--ink)',letterSpacing:'-.01em',
-          transform:pressed==='escanear'?'scale(.97)':'scale(1)',
+          transform:pressed==='compartir'?'scale(.97)':'scale(1)',
           transition:'transform .18s cubic-bezier(.34,1.56,.64,1)',
           boxShadow:'var(--btn-s-sh)',
         }}>
-          <CameraIcon size={14} color={ink}/> Escanear
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <circle cx="11" cy="2.5" r="1.8" stroke={ink} strokeWidth="1.4"/>
+            <circle cx="11" cy="11.5" r="1.8" stroke={ink} strokeWidth="1.4"/>
+            <circle cx="3"  cy="7"   r="1.8" stroke={ink} strokeWidth="1.4"/>
+            <path d="M4.7 6.1L9.3 3.4M4.7 7.9L9.3 10.6" stroke={ink} strokeWidth="1.4" strokeLinecap="round"/>
+          </svg>
+          Compartir
         </button>
       </div>
     </div>
@@ -398,7 +588,7 @@ function IOSDevice({ children, width=390, height=844 }) {
 }
 
 // ── Home screen ────────────────────────────────────────────────────────────
-function HomeScreen({ withBadge=false, shimmer=false, savedMovie=null, widgetPressed=null, onWidgetTap }) {
+function HomeScreen({ withBadge=false, shimmer=false, savedMovie=null, widgetPressed=null, onWidgetTap, onMeliPlayTap }) {
   const dummyApps = [
     {color:'#4A90E2',glyph:'◐'},{color:'#2A2A2A',glyph:'♪'},
     {color:'#5DBA47',glyph:'◇'},{color:'#FFD93D',glyph:'✸'},
@@ -409,18 +599,19 @@ function HomeScreen({ withBadge=false, shimmer=false, savedMovie=null, widgetPre
     <div style={{width:'100%',height:'100%',position:'relative',overflow:'hidden',
       background:'var(--device-bg)',transition:'background .35s'}}>
       <div style={{paddingTop:70}}/>
-      <div style={{display:'flex',justifyContent:'center',marginTop:24,position:'relative'}}
-        onClick={e => { const btn = e.target.closest('[data-action]'); if (btn && onWidgetTap) onWidgetTap(btn.dataset.action); }}>
-        <Widget withBadge={withBadge} shimmer={shimmer} savedMovie={savedMovie} pressed={widgetPressed}/>
+      <div style={{display:'flex',justifyContent:'center',marginTop:24,position:'relative'}}>
+        <Widget withBadge={withBadge} shimmer={shimmer} savedMovie={savedMovie} pressed={widgetPressed} onTap={onWidgetTap}/>
       </div>
       <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:20,padding:'28px 28px 0'}}>
         {dummyApps.map((a,i) => (
           i === 7 ? (
-            <div key="meliplay" style={{display:'flex',flexDirection:'column',alignItems:'center',gap:6}}>
+            <div key="meliplay" onClick={onMeliPlayTap}
+              style={{display:'flex',flexDirection:'column',alignItems:'center',gap:6,cursor:'pointer'}}>
               <div style={{
                 width:52,height:52,borderRadius:13,background:TERRA,
                 display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',
                 boxShadow:'var(--icon-sh)',position:'relative',overflow:'hidden',
+                transition:'transform .18s cubic-bezier(.34,1.56,.64,1)',
               }}>
                 <div style={{position:'absolute',top:0,left:0,right:0,height:'50%',
                   background:'rgba(255,255,255,.12)',borderRadius:'13px 13px 40% 40%',pointerEvents:'none'}}/>
@@ -484,6 +675,51 @@ function AddButton({ added, animating, onTap }) {
   );
 }
 
+// ── Card add button: + → bounces → "✓ Añadido" pill → check circle ─────────
+function CardAddButton({ added, onAdd }) {
+  const { ink } = useTheme();
+  const [expanded, setExpanded]   = useState(false);
+  const [animating, setAnimating] = useState(false);
+
+  const handleClick = (e) => {
+    e.stopPropagation();
+    if (added) return;
+    onAdd();
+    setAnimating(true);
+    setExpanded(true);
+    setTimeout(() => setAnimating(false), 400);
+    setTimeout(() => setExpanded(false), 1800);
+  };
+
+  const showPill = added && expanded;
+  return (
+    <div onClick={handleClick} style={{
+      height:28, width: showPill ? 88 : 28, borderRadius:14,
+      background: added ? TERRA : 'var(--add-bg)',
+      display:'flex', alignItems:'center', justifyContent:'center', gap:4,
+      flexShrink:0, cursor: added ? 'default' : 'pointer', overflow:'hidden',
+      transition:'width .35s cubic-bezier(.34,1.56,.64,1),background .2s,box-shadow .2s',
+      boxShadow: added ? 'var(--add-ash)' : 'var(--add-sh)',
+      animation: animating ? 'plusBounce .38s cubic-bezier(.34,1.56,.64,1)' : 'none',
+    }}>
+      {showPill ? (
+        <>
+          <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+            <path d="M2 5.5l2.5 2.5 4.5-4.5" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+          <span style={{fontFamily:'var(--sans)',fontSize:11,fontWeight:600,color:'#fff',whiteSpace:'nowrap',letterSpacing:'-.01em'}}>Añadido</span>
+        </>
+      ) : added ? (
+        <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+          <path d="M2 5.5l2.5 2.5 4.5-4.5" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      ) : (
+        <PlusIcon size={12} color={ink}/>
+      )}
+    </div>
+  );
+}
+
 // ── Section label ──────────────────────────────────────────────────────────
 function SectionLabel({ label }) {
   return (
@@ -494,7 +730,7 @@ function SectionLabel({ label }) {
 }
 
 // ── Result row ─────────────────────────────────────────────────────────────
-function ResultRow({ movie, delay=0, added, animating, onPlusTap }) {
+function ResultRow({ movie, delay=0, added, onPlusTap }) {
   const dot = <span style={{width:3,height:3,borderRadius:'50%',background:'var(--ink-sub)',flexShrink:0}}/>;
   return (
     <div style={{
@@ -513,7 +749,7 @@ function ResultRow({ movie, delay=0, added, animating, onPlusTap }) {
           <span style={{padding:'2px 7px',borderRadius:4,background:'rgba(200,82,42,.1)',color:TERRA,fontWeight:600,letterSpacing:'.02em'}}>{movie.genre}</span>
         </div>
       </div>
-      <AddButton added={added} animating={animating} onTap={onPlusTap}/>
+      <CardAddButton added={added} onAdd={onPlusTap}/>
     </div>
   );
 }
@@ -588,12 +824,13 @@ function SearchSheetInteractive({ onResultTap, onDismiss }) {
   const [displayedResults, setDisplayed] = useState([]);
   const [closing, setClosing]            = useState(false);
   const [recents, setRecents]            = useState(['Harry Potter','Forrest Gump','Tony Stark','Steve Carell']);
+  const [kbVisible, setKbVisible]        = useState(true);
   const inputRef  = useRef(null);
   const debouncer = useRef(null);
 
-  useEffect(() => { setTimeout(() => inputRef.current?.focus(), 420); }, []);
+  useEffect(() => { setTimeout(() => inputRef.current?.focus(), 200); }, []);
 
-  const handleDismiss = () => { setClosing(true); setTimeout(() => onDismiss(), 380); };
+  const handleDismiss = () => { setClosing(true); setTimeout(() => onDismiss(), 360); };
 
   const handleQueryChange = val => {
     setQuery(val);
@@ -622,104 +859,225 @@ function SearchSheetInteractive({ onResultTap, onDismiss }) {
   const removeBanner = id => setBanners(prev => prev.filter(b => b.id !== id));
 
   const handlePlusTap = m => {
-    if (addedIds.has(m.id) || animatingId) return;
-    setAnimatingId(m.id);
-    setTimeout(() => { setAnimatingId(null); setAddedIds(prev => new Set(prev).add(m.id)); }, 280);
-    setTimeout(() => { setBanners(prev => [...prev, {id:Date.now(), movie:m}]); onResultTap(m); }, 1100);
+    if (addedIds.has(m.id)) return;
+    setAddedIds(prev => new Set(prev).add(m.id));
+    setTimeout(() => { setBanners(prev => [...prev, {id:Date.now(), movie:m}]); onResultTap(m); }, 600);
+  };
+
+  const KB_ROWS = [
+    ['Q','W','E','R','T','Y','U','I','O','P'],
+    ['A','S','D','F','G','H','J','K','L'],
+    ['⇧','Z','X','C','V','B','N','M','⌫'],
+    ['123','⎵','⏎'],
+  ];
+  const handleKey = k => {
+    if (k==='⌫') { handleQueryChange(query.slice(0,-1)); return; }
+    if (k==='⎵') { handleQueryChange(query+' '); return; }
+    if (k==='⏎'||k==='⇧'||k==='123'||k==='.?!') return;
+    handleQueryChange(query + k.toLowerCase());
   };
 
   return (
-    <div style={{width:'100%',height:'100%',position:'relative',overflow:'hidden'}}>
-      {banners.map(b => <ConfirmationBanner key={b.id} movie={b.movie} animate onHidden={() => removeBanner(b.id)}/>)}
-      <div style={{position:'absolute',inset:0,background:'var(--device-bg)',filter:'var(--bd-filter)',transform:'scale(1.1)'}}/>
-      <div style={{position:'absolute',inset:0,background:'rgba(0,0,0,.22)'}}/>
+    <div style={{width:'100%',height:'100%',position:'absolute',inset:0,overflow:'hidden'}}>
+      {/* Blurred / dimmed scrim — backdrop-filter blurs the live home screen below */}
       <div style={{
-        position:'absolute',top:62,left:0,right:0,bottom:0,
-        background:'var(--sheet-bg)',backdropFilter:'var(--sheet-blur)',WebkitBackdropFilter:'var(--sheet-blur)',
-        borderTopLeftRadius:24,borderTopRightRadius:24,
-        animation:closing?'sheetDown .38s cubic-bezier(.32,.72,0,1) forwards':'sheetUp .42s cubic-bezier(.32,.72,0,1)',
-        display:'flex',flexDirection:'column',overflow:'hidden',
-        transition:'background .35s',
+        position:'absolute', inset:0,
+        background:'rgba(0,0,0,.32)',
+        backdropFilter:'blur(12px) brightness(.75)',
+        WebkitBackdropFilter:'blur(12px) brightness(.75)',
+      }}/>
+
+      {/* Confirmation banners (above overlay) */}
+      {banners.map(b => (
+        <div key={b.id} style={{position:'absolute',top:0,left:0,right:0,zIndex:50,pointerEvents:'none'}}>
+          <ConfirmationBanner movie={b.movie} animate onHidden={() => removeBanner(b.id)}/>
+        </div>
+      ))}
+
+      {/* Sheet panel — slides up from bottom */}
+      <div style={{
+        position:'absolute', top:62, left:0, right:0, bottom:0,
+        background:'var(--sheet-bg)',
+        backdropFilter:'var(--sheet-blur)', WebkitBackdropFilter:'var(--sheet-blur)',
+        borderTopLeftRadius:24, borderTopRightRadius:24,
+        display:'flex', flexDirection:'column', overflow:'hidden',
+        animation: closing ? 'sheetDown .38s cubic-bezier(.32,.72,0,1) forwards'
+                           : 'sheetUp .42s cubic-bezier(.32,.72,0,1)',
+        paddingBottom: kbVisible ? 0 : 34,
+        transition:'padding-bottom .3s cubic-bezier(.4,0,.2,1), background .35s',
       }}>
-        <div style={{display:'flex',justifyContent:'center',padding:'8px 0 4px'}}>
-          <div style={{width:36,height:5,borderRadius:3,background:'var(--grabber)'}}/>
-        </div>
-        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'4px 20px 14px'}}>
-          <MeliMark size={15} dotColor={TERRA}/>
-          <div onClick={handleDismiss} style={{fontFamily:'var(--sans)',fontSize:15,fontWeight:500,color:TERRA,cursor:'pointer'}}>Cerrar</div>
-        </div>
-        <div style={{padding:'0 16px'}}>
-          <div style={{
-            display:'flex',alignItems:'center',gap:8,
-            background:'var(--search-bg)',borderRadius:12,padding:'12px 14px',
-            boxShadow:'var(--search-sh)',
-            animation:'pulseSearch .9s cubic-bezier(.34,1.56,.64,1) .4s 1 both',
-            transition:'background .35s,box-shadow .35s',
-          }}>
-            <SearchIcon size={17} color="var(--ink-sub)" weight={2.2}/>
-            <input ref={inputRef} value={query} onChange={e => handleQueryChange(e.target.value)}
-              placeholder="Películas, series, actores…"
-              style={{flex:1,border:'none',background:'transparent',outline:'none',
-                fontFamily:'var(--sans)',fontSize:16,color:'var(--ink)',caretColor:TERRA}}/>
-            {query && (
-              <div onClick={() => { handleQueryChange(''); inputRef.current?.focus(); }}
-                style={{width:18,height:18,borderRadius:'50%',flexShrink:0,
-                  background:'var(--clr-btn)',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
-                <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
-                  <path d="M1 1l6 6M7 1L1 7" stroke={ink} strokeWidth="1.6" strokeLinecap="round"/>
-                </svg>
-              </div>
-            )}
+
+        {/* Header — grab handle + logo left + Cerrar right */}
+        <div style={{flexShrink:0}}>
+          <div style={{display:'flex',justifyContent:'center',padding:'8px 0 4px'}}>
+            <div style={{width:36,height:5,borderRadius:3,background:'var(--grabber)'}}/>
+          </div>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'4px 20px 14px'}}>
+            <MeliMark size={15} dotColor={TERRA}/>
+            <div onClick={handleDismiss} style={{
+              fontFamily:'var(--sans)',fontSize:15,fontWeight:500,
+              color:TERRA,cursor:'pointer',letterSpacing:'-.01em',
+            }}>Cerrar</div>
           </div>
         </div>
-        <div className="no-scrollbar" style={{flex:1,overflowY:'auto',padding:'16px 16px 0'}}>
-          {!query && (
-            <div style={{fontFamily:'var(--sans)',fontSize:12,fontWeight:600,
-              color:'var(--ink-sub)',letterSpacing:'.08em',textTransform:'uppercase',marginBottom:12}}>Recientes</div>
-          )}
-          {!query && recents.map((q,i) => (
-            <div key={i} onClick={() => handleQueryChange(q)}
-              style={{display:'flex',alignItems:'center',gap:12,padding:'12px 0',
-                borderBottom:'.5px solid var(--divider)',cursor:'pointer'}}>
-              <div style={{width:30,height:30,borderRadius:8,background:'var(--ri-bg)',
-                display:'flex',alignItems:'center',justifyContent:'center'}}>
-                <svg width="14" height="14" viewBox="0 0 14 14">
-                  <path d="M7 3v4l3 2" stroke={TERRA} strokeWidth="1.8" fill="none" strokeLinecap="round"/>
-                  <circle cx="7" cy="7" r="6" stroke={TERRA} strokeWidth="1.6" fill="none"/>
-                </svg>
-              </div>
-              <div style={{flex:1,fontFamily:'var(--sans)',fontSize:15,color:'var(--ink)'}}>{q}</div>
+
+      {/* Recents / results — scrollable */}
+      <div className="no-scrollbar" style={{flex:1,overflowY:'auto',padding:'0 16px 6px',minHeight:0}}
+        onScroll={e => {
+          if (e.target.scrollTop > 24) setKbVisible(false);
+        }}>
+        {!query && (
+          <div style={{fontFamily:'var(--sans)',fontSize:12,fontWeight:600,
+            color:'var(--ink-sub)',letterSpacing:'.08em',textTransform:'uppercase',
+            marginBottom:10,marginTop:4}}>Recientes</div>
+        )}
+        {!query && recents.map((q,i) => (
+          <div key={i} onClick={() => { handleQueryChange(q); setTimeout(()=>inputRef.current?.focus(),50); }}
+            style={{display:'flex',alignItems:'center',gap:12,padding:'11px 0',
+              borderBottom:'.5px solid var(--divider)',cursor:'pointer',
+              animation:`fadeUpIn .3s cubic-bezier(.34,1.56,.64,1) ${i*.06}s both`}}>
+            <div style={{width:30,height:30,borderRadius:8,background:'var(--ri-bg)',
+              display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+              <svg width="14" height="14" viewBox="0 0 14 14">
+                <path d="M7 3v4l3 2" stroke={TERRA} strokeWidth="1.8" fill="none" strokeLinecap="round"/>
+                <circle cx="7" cy="7" r="6" stroke={TERRA} strokeWidth="1.6" fill="none"/>
+              </svg>
+            </div>
+            <div style={{flex:1,fontFamily:'var(--sans)',fontSize:14,color:'var(--ink)'}}>{q}</div>
+          </div>
+        ))}
+        {loading && (
+          <div style={{display:'flex',flexDirection:'column',gap:6,marginTop:4}}>
+            {[0,1,2].map(i => <SkeletonRow key={i} delay={i*.06}/>)}
+          </div>
+        )}
+        {!loading && query && (() => {
+          if (!displayedResults.length)
+            return <div style={{fontFamily:'var(--sans)',fontSize:14,color:'var(--ink-sub)',textAlign:'center',marginTop:40}}>Sin resultados</div>;
+          const films  = displayedResults.filter(m => m.type !== 'series');
+          const series = displayedResults.filter(m => m.type === 'series');
+          const mixed  = films.length > 0 && series.length > 0;
+          const renderRows = (items, offset=0) => items.map((m,i) => (
+            <ResultRow key={m.id} movie={m} delay={(offset+i)*.05}
+              added={addedIds.has(m.id)}
+              onPlusTap={() => handlePlusTap(m)}/>
+          ));
+          return mixed ? (
+            <div style={{display:'flex',flexDirection:'column'}}>
+              <SectionLabel label="Películas"/>
+              <div style={{display:'flex',flexDirection:'column',gap:10,marginBottom:12}}>{renderRows(films,0)}</div>
+              <div style={{height:1,background:'var(--divider)',margin:'4px 8px 12px'}}/>
+              <SectionLabel label="Series"/>
+              <div style={{display:'flex',flexDirection:'column',gap:10}}>{renderRows(series,films.length)}</div>
+            </div>
+          ) : (
+            <div style={{display:'flex',flexDirection:'column',gap:10}}>{renderRows(displayedResults)}</div>
+          );
+        })()}
+      </div>
+
+      {/* ── Search bar — sits right above keyboard ── */}
+      <div style={{
+        padding:'8px 12px 6px', flexShrink:0,
+        display:'flex', alignItems:'center', gap:10,
+        borderTop:'.5px solid var(--divider)',
+        background:'var(--sheet-bg)',
+        transition:'background .35s',
+      }}>
+        <div style={{
+          flex:1, display:'flex', alignItems:'center', gap:9,
+          background:'var(--search-bg)',
+          borderRadius:14, padding:'11px 14px',
+          boxShadow:'var(--search-sh)',
+          animation:'pulseSearch .7s cubic-bezier(.34,1.56,.64,1) .1s 1 both',
+          transition:'background .35s, box-shadow .35s',
+        }}>
+          <SearchIcon size={16} color="var(--ink-sub)" weight={2}/>
+          <input
+            ref={inputRef}
+            value={query}
+            onChange={e => handleQueryChange(e.target.value)}
+            onFocus={() => setKbVisible(true)}
+            placeholder="Películas, series, actores…"
+            style={{
+              flex:1, border:'none', background:'transparent', outline:'none',
+              fontFamily:'var(--sans)', fontSize:15, color:'var(--ink)',
+              caretColor:TERRA, letterSpacing:'-.01em',
+            }}
+          />
+        </div>
+        {/* X — hides keyboard; search bar stays; back arrow closes entirely */}
+        <div onMouseDown={e => {
+          e.preventDefault();
+          handleQueryChange('');
+          setKbVisible(false);
+          setTimeout(() => inputRef.current?.blur(), 0);
+        }}
+          style={{
+            width:36, height:36, borderRadius:'50%', flexShrink:0, cursor:'pointer',
+            background:'var(--clr-btn)',
+            display:'flex', alignItems:'center', justifyContent:'center',
+            transition:'background .35s',
+          }}>
+          <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+            <path d="M1.5 1.5l8 8M9.5 1.5l-8 8" stroke="var(--ink)" strokeWidth="2.2" strokeLinecap="round"/>
+          </svg>
+        </div>
+      </div>
+
+      {/* ── Virtual keyboard — slides in/out ── */}
+      <div style={{
+        flexShrink:0, overflow:'hidden',
+        maxHeight: kbVisible ? 260 : 0,
+        transition:'max-height .32s cubic-bezier(.4,0,.2,1)',
+      }}>
+        <div style={{
+          background:'var(--kb-bg, rgba(210,213,219,1))',
+          padding:'8px 3px 6px',
+          borderTop:'.5px solid var(--divider)',
+          transition:'background .35s',
+        }}>
+          {KB_ROWS.map((row, ri) => (
+            <div key={ri} style={{display:'flex',justifyContent:'center',gap:5,marginBottom:ri===3?0:7}}>
+              {row.map(k => {
+                const isAction = ['⇧','⌫','123','.?!','⏎'].includes(k);
+                const isSpace  = k==='⎵';
+                const isDel    = k==='⌫';
+                const isReturn = k==='⏎';
+                const isShift  = k==='⇧';
+                return (
+                  <button key={k} onMouseDown={e => { e.preventDefault(); handleKey(k); inputRef.current?.focus(); }}
+                    style={{
+                      flexShrink: isSpace ? 1 : 0,
+                      width:  isSpace ? undefined : isReturn ? 88 : (ri===2&&(isShift||isDel)) ? 42 : ri===3 ? 76 : 30,
+                      flex:   isSpace ? 1 : undefined,
+                      maxWidth: isSpace ? 168 : undefined,
+                      height: ri===3 ? 44 : 42,
+                      borderRadius:5, border:'none', cursor:'pointer',
+                      fontFamily:'var(--sans)',
+                      fontSize: isDel ? 0 : isReturn||isAction ? 13 : 17,
+                      fontWeight: isAction ? 500 : 400,
+                      color:'var(--ink)',
+                      background: isAction&&!isReturn ? 'var(--kb-action,rgba(172,177,185,1))'
+                                : isReturn ? TERRA : 'var(--key-bg,#fff)',
+                      boxShadow: isAction ? 'none' : '0 1px 0 rgba(0,0,0,.28)',
+                      display:'flex', alignItems:'center', justifyContent:'center',
+                      letterSpacing: isReturn ? '.02em' : 0,
+                      userSelect:'none', WebkitUserSelect:'none',
+                    }}>
+                    {isDel ? (
+                      <svg width="17" height="13" viewBox="0 0 17 13" fill="none">
+                        <path d="M5 1.5L1 6.5L5 11.5H16V1.5H5Z" stroke="var(--ink)" strokeWidth="1.4" fill="none"/>
+                        <path d="M7.5 4.5l4 4M11.5 4.5l-4 4" stroke="var(--ink)" strokeWidth="1.4" strokeLinecap="round"/>
+                      </svg>
+                    ) : isReturn ? '↵' : k==='⎵' ? '' : k}
+                  </button>
+                );
+              })}
             </div>
           ))}
-          {loading && (
-            <div style={{display:'flex',flexDirection:'column',gap:6,marginTop:4}}>
-              {[0,1,2].map(i => <SkeletonRow key={i} delay={i*.06}/>)}
-            </div>
-          )}
-          {!loading && query && (() => {
-            if (!displayedResults.length)
-              return <div style={{fontFamily:'var(--sans)',fontSize:14,color:'var(--ink-sub)',textAlign:'center',marginTop:40}}>Sin resultados</div>;
-            const films  = displayedResults.filter(m => m.type !== 'series');
-            const series = displayedResults.filter(m => m.type === 'series');
-            const mixed  = films.length > 0 && series.length > 0;
-            const renderRows = (items, offset=0) => items.map((m,i) => (
-              <ResultRow key={m.id} movie={m} delay={(offset+i)*.05}
-                added={addedIds.has(m.id)} animating={animatingId===m.id}
-                onPlusTap={() => handlePlusTap(m)}/>
-            ));
-            return mixed ? (
-              <div style={{display:'flex',flexDirection:'column'}}>
-                <SectionLabel label="Películas"/>
-                <div style={{display:'flex',flexDirection:'column',gap:10,marginBottom:12}}>{renderRows(films,0)}</div>
-                <div style={{height:1,background:'var(--divider)',margin:'4px 8px 12px'}}/>
-                <SectionLabel label="Series"/>
-                <div style={{display:'flex',flexDirection:'column',gap:10}}>{renderRows(series,films.length)}</div>
-              </div>
-            ) : (
-              <div style={{display:'flex',flexDirection:'column',gap:10}}>{renderRows(displayedResults)}</div>
-            );
-          })()}
         </div>
+      </div>
       </div>
     </div>
   );
@@ -781,13 +1139,1120 @@ function StylePanel({ uiStyle, mode, onStyle, onMode }) {
   );
 }
 
+// ── MeliPlay in-app search view ───────────────────────────────────────────
+function MeliPlaySearchView({ onMovieAdded, onKbChange }) {
+  const { ink } = useTheme();
+  const [query, setQuery]           = useState('');
+  const [loading, setLoading]       = useState(false);
+  const [results, setResults]       = useState([]);
+  const [recents, setRecents]       = useState(['Harry Potter','Noches de fuego','Avengers','La La Land']);
+  const [addedIds, setAddedIds]     = useState(new Set());
+  const [animatingId, setAnimId]    = useState(null);
+  const [banners, setBanners]       = useState([]);
+  const [searchType, setSearchType] = useState(null); // 'actor' | 'semantic' | null
+  const [actorName, setActorName]   = useState(null);
+  const [kbVisible, setKbVisible]   = useState(true);
+  const debouncer = useRef(null);
+  const inputRef  = useRef(null);
+
+  // Helper — updates local state AND notifies parent so tab bar can hide
+  const setKbVis = v => { setKbVisible(v); onKbChange?.(v); };
+
+  useEffect(() => {
+    setTimeout(() => inputRef.current?.focus(), 150);
+    onKbChange?.(true);                    // keyboard starts visible
+    return () => { onKbChange?.(false); }; // restore tab bar when leaving buscar
+  }, []);
+
+  const handleQueryChange = val => {
+    setQuery(val);
+    setSearchType(null); setActorName(null);
+    clearTimeout(debouncer.current);
+    if (!val) { setLoading(false); setResults([]); return; }
+    setLoading(true); setResults([]);
+    debouncer.current = setTimeout(async () => {
+      const q = val.trim();
+      if (q.length < 2) { setResults([]); setLoading(false); return; }
+      try {
+        const actor    = matchActor(q);
+        const semantic = !actor ? matchSemantic(q) : null;
+
+        if (actor) {
+          // ── Actor search: fetch each of their movies by exact title ──
+          setActorName(actor.actor); setSearchType('actor');
+          const fetched = await Promise.all(
+            actor.movies.slice(0,10).map(t =>
+              fetch(`https://www.omdbapi.com/?t=${encodeURIComponent(t)}&apikey=${OMDB_KEY}`)
+                .then(r => r.json())
+                .then(d => d.Response==='True' ? {
+                  id:d.imdbID, title:d.Title, year:parseInt(d.Year)||0,
+                  type:d.Type==='series'?'series':'movie',
+                  genre:d.Genre?.split(',')[0]||'Drama', poster:d.Poster,
+                } : null).catch(()=>null)
+            )
+          );
+          setResults(fetched.filter(Boolean));
+
+        } else if (semantic) {
+          // ── Semantic search: top match + regular title search ──
+          setSearchType('semantic');
+          const [smartRes, regularRes] = await Promise.all([
+            fetch(`https://www.omdbapi.com/?t=${encodeURIComponent(semantic.title)}&apikey=${OMDB_KEY}`).then(r=>r.json()),
+            fetch(`https://www.omdbapi.com/?s=${encodeURIComponent(q)}&apikey=${OMDB_KEY}`).then(r=>r.json()),
+          ]);
+          const out = [];
+          if (smartRes.Response==='True') out.push({
+            id:smartRes.imdbID, title:smartRes.Title, year:parseInt(smartRes.Year)||0,
+            type:'movie', genre:smartRes.Genre?.split(',')[0]||'Drama', poster:smartRes.Poster,
+            smartMatch:true,
+          });
+          if (regularRes.Response==='True') {
+            regularRes.Search.forEach(m => {
+              if (!out.some(r=>r.id===m.imdbID)) out.push({
+                id:m.imdbID, title:m.Title, year:parseInt(m.Year)||0,
+                type:m.Type==='series'?'series':'movie',
+                genre:m.Type==='series'?'Serie':'Película', poster:m.Poster,
+              });
+            });
+          }
+          setResults(out);
+
+        } else {
+          // ── Regular OMDb title/keyword search ──
+          const res  = await fetch(`https://www.omdbapi.com/?s=${encodeURIComponent(q)}&apikey=${OMDB_KEY}`);
+          const data = await res.json();
+          setResults(data.Response==='True' ? data.Search.map(m => ({
+            id:m.imdbID, title:m.Title, year:parseInt(m.Year)||0,
+            type:m.Type==='series'?'series':'movie',
+            genre:m.Type==='series'?'Serie':'Película', poster:m.Poster,
+          })) : []);
+        }
+        const term = q;
+        setRecents(prev => [term, ...prev.filter(r=>r.toLowerCase()!==term.toLowerCase())].slice(0,5));
+      } catch(e) { setResults([]); }
+      setLoading(false);
+    }, 600);
+  };
+
+  const handlePlusTap = m => {
+    if (addedIds.has(m.id)) return;
+    setAddedIds(prev => new Set(prev).add(m.id));
+    setTimeout(() => {
+      setBanners(prev => [...prev, {id:Date.now(), movie:m}]);
+      onMovieAdded?.(m);
+    }, 600);
+  };
+
+  const removeBanner = id => setBanners(prev => prev.filter(b => b.id !== id));
+
+  const handleKey = k => {
+    if (k==='⌫') { handleQueryChange(query.slice(0,-1)); return; }
+    if (k==='⎵') { handleQueryChange(query+' '); return; }
+    if (k==='⏎' || k==='⇧' || k==='123' || k==='.?!') return;
+    handleQueryChange(query + k.toLowerCase());
+  };
+
+  const KB_ROWS = [
+    ['Q','W','E','R','T','Y','U','I','O','P'],
+    ['A','S','D','F','G','H','J','K','L'],
+    ['⇧','Z','X','C','V','B','N','M','⌫'],
+    ['123','⎵','⏎'],
+  ];
+
+  return (
+    <div style={{display:'flex',flexDirection:'column',flex:1,overflow:'hidden',position:'relative',minHeight:0,
+      paddingBottom: kbVisible ? 0 : 76,
+      transition:'padding-bottom .3s cubic-bezier(.4,0,.2,1)',
+    }}>
+      {/* Confirmation banners */}
+      {banners.map(b => (
+        <div key={b.id} style={{position:'absolute',top:0,left:0,right:0,zIndex:50,pointerEvents:'none'}}>
+          <ConfirmationBanner movie={b.movie} animate onHidden={() => removeBanner(b.id)}/>
+        </div>
+      ))}
+
+      {/* Recents / results scroll area */}
+      <div className="no-scrollbar" style={{flex:1,overflowY:'auto',padding:'0 16px 6px',minHeight:0}}
+        onScroll={e => {
+          if (e.target.scrollTop > 24) setKbVis(false);
+        }}>
+        {!query && (
+          <>
+            <div style={{fontFamily:'var(--sans)',fontSize:12,fontWeight:600,
+              color:'var(--ink-sub)',letterSpacing:'.08em',textTransform:'uppercase',
+              marginBottom:10,marginTop:4}}>Recientes</div>
+            {recents.map((q,i) => (
+              <div key={i} onClick={() => { handleQueryChange(q); setTimeout(() => inputRef.current?.focus(), 50); }}
+                style={{display:'flex',alignItems:'center',gap:12,padding:'11px 0',
+                  borderBottom:'.5px solid var(--divider)',cursor:'pointer',
+                  animation:`fadeUpIn .3s cubic-bezier(.34,1.56,.64,1) ${i*.06}s both`}}>
+                <div style={{width:30,height:30,borderRadius:8,background:'var(--ri-bg)',
+                  display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                  <svg width="14" height="14" viewBox="0 0 14 14">
+                    <path d="M7 3v4l3 2" stroke={TERRA} strokeWidth="1.8" fill="none" strokeLinecap="round"/>
+                    <circle cx="7" cy="7" r="6" stroke={TERRA} strokeWidth="1.6" fill="none"/>
+                  </svg>
+                </div>
+                <div style={{flex:1,fontFamily:'var(--sans)',fontSize:14,color:'var(--ink)'}}>{q}</div>
+              </div>
+            ))}
+          </>
+        )}
+        {loading && (
+          <div style={{display:'flex',flexDirection:'column',gap:6,marginTop:4}}>
+            {[0,1,2].map(i => <SkeletonRow key={i} delay={i*.06}/>)}
+          </div>
+        )}
+        {!loading && query && (
+          results.length === 0
+            ? <div style={{fontFamily:'var(--sans)',fontSize:14,color:'var(--ink-sub)',textAlign:'center',marginTop:32}}>Sin resultados</div>
+            : <>
+                {/* Actor context banner */}
+                {searchType==='actor' && actorName && (
+                  <div style={{display:'flex',alignItems:'center',gap:7,marginBottom:12,marginTop:4,
+                    padding:'8px 12px',borderRadius:10,background:'rgba(200,82,42,.08)',
+                    animation:'fadeUpIn .3s cubic-bezier(.34,1.56,.64,1) both'}}>
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                      <circle cx="8" cy="5" r="3.2" stroke={TERRA} strokeWidth="1.5"/>
+                      <path d="M2 15c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke={TERRA} strokeWidth="1.5" strokeLinecap="round"/>
+                    </svg>
+                    <div style={{flex:1,minWidth:0}}>
+                      <span style={{fontFamily:'var(--sans)',fontSize:10,fontWeight:700,
+                        color:TERRA,letterSpacing:'.06em',textTransform:'uppercase'}}>Películas y series</span>
+                      <div style={{fontFamily:'var(--sans)',fontSize:13,fontWeight:600,
+                        color:'var(--ink)',textTransform:'capitalize',letterSpacing:'-.01em',
+                        overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{actorName}</div>
+                    </div>
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                      <path d="M3 7h8M7 3l4 4-4 4" stroke={TERRA} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </div>
+                )}
+
+                {/* Semantic "smart match" badge for the first result */}
+                {searchType==='semantic' && results[0]?.smartMatch && (
+                  <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:10,marginTop:4,
+                    animation:'fadeUpIn .3s cubic-bezier(.34,1.56,.64,1) both'}}>
+                    <div style={{padding:'4px 10px',borderRadius:20,
+                      background:'rgba(200,82,42,.1)',
+                      display:'flex',alignItems:'center',gap:5,border:'1px solid rgba(200,82,42,.2)'}}>
+                      <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
+                        <path d="M6 1l1.3 3.7H11L8.2 7l1 3.4L6 8.5 2.8 10.4l1-3.4L1 4.7h3.7z"
+                          fill={TERRA} stroke={TERRA} strokeWidth=".5"/>
+                      </svg>
+                      <span style={{fontFamily:'var(--sans)',fontSize:11,fontWeight:600,
+                        color:TERRA,letterSpacing:'.02em'}}>Búsqueda inteligente</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Actor results: movies first, then series separated */}
+                {searchType==='actor' ? (() => {
+                  const films  = results.filter(m => m.type !== 'series');
+                  const series = results.filter(m => m.type === 'series');
+                  const rows = (items, offset) => items.map((m,i) => (
+                    <ResultRow key={m.id} movie={m} delay={(offset+i)*.04}
+                      added={addedIds.has(m.id)}
+                      onPlusTap={() => handlePlusTap(m)}/>
+                  ));
+                  return (
+                    <div style={{display:'flex',flexDirection:'column'}}>
+                      {films.length > 0 && <>
+                        <SectionLabel label="Películas"/>
+                        <div style={{display:'flex',flexDirection:'column',gap:8,marginBottom:series.length?14:0}}>
+                          {rows(films, 0)}
+                        </div>
+                      </>}
+                      {series.length > 0 && <>
+                        {films.length > 0 && <div style={{height:1,background:'var(--divider)',margin:'4px 8px 12px'}}/>}
+                        <SectionLabel label="Series"/>
+                        <div style={{display:'flex',flexDirection:'column',gap:8}}>
+                          {rows(series, films.length)}
+                        </div>
+                      </>}
+                    </div>
+                  );
+                })() : (
+                  <div style={{display:'flex',flexDirection:'column',gap:8}}>
+                    {results.map((m,i) => (
+                      <ResultRow key={m.id} movie={m} delay={i*.04}
+                        added={addedIds.has(m.id)}
+                        onPlusTap={() => handlePlusTap(m)}/>
+                    ))}
+                  </div>
+                )}
+              </>
+        )}
+      </div>
+
+      {/* ── Search input — above keyboard, theme-aware ── */}
+      <div style={{
+        padding:'8px 12px 6px', flexShrink:0,
+        display:'flex', alignItems:'center', gap:10,
+        borderTop:'.5px solid var(--divider)',
+        background:'var(--device-bg)',
+        transition:'background .35s',
+      }}>
+        <div style={{
+          flex:1, display:'flex', alignItems:'center', gap:9,
+          background:'var(--search-bg)',
+          borderRadius:14, padding:'11px 14px',
+          boxShadow:'var(--search-sh)',
+          animation:'pulseSearch .7s cubic-bezier(.34,1.56,.64,1) .1s 1 both',
+          transition:'background .35s, box-shadow .35s',
+        }}>
+          <SearchIcon size={16} color="var(--ink-sub)" weight={2}/>
+          <input
+            ref={inputRef}
+            value={query}
+            onChange={e => handleQueryChange(e.target.value)}
+            onFocus={() => setKbVis(true)}
+            placeholder="Buscar películas, series…"
+            style={{
+              flex:1, border:'none', background:'transparent', outline:'none',
+              fontFamily:'var(--sans)', fontSize:15, color:'var(--ink)',
+              caretColor:TERRA, letterSpacing:'-.01em',
+            }}
+          />
+        </div>
+        {/* X — hides keyboard and brings menu back */}
+        <div onMouseDown={e => {
+          e.preventDefault();
+          handleQueryChange('');
+          setKbVis(false);
+          setTimeout(() => inputRef.current?.blur(), 0);
+        }}
+          style={{
+            width:36, height:36, borderRadius:'50%', flexShrink:0, cursor:'pointer',
+            background:'var(--clr-btn)',
+            display:'flex', alignItems:'center', justifyContent:'center',
+            transition:'background .35s',
+          }}>
+          <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+            <path d="M1.5 1.5l8 8M9.5 1.5l-8 8" stroke="var(--ink)" strokeWidth="2.2" strokeLinecap="round"/>
+          </svg>
+        </div>
+      </div>
+
+      {/* Visual iOS keyboard — slides away on scroll, back on input focus */}
+      <div style={{
+        flexShrink:0, overflow:'hidden',
+        maxHeight: kbVisible ? 260 : 0,
+        transition:'max-height .32s cubic-bezier(.4,0,.2,1)',
+      }}>
+      <div style={{
+        background:'var(--kb-bg, rgba(210,213,219,1))',
+        padding:'8px 3px 6px',
+        borderTop:'.5px solid var(--divider)',
+        transition:'background .35s',
+      }}>
+        {KB_ROWS.map((row, ri) => (
+          <div key={ri} style={{display:'flex',justifyContent:'center',
+            gap: ri===3 ? 5 : 5, marginBottom: ri===3 ? 0 : 7}}>
+            {row.map(k => {
+              const isAction = ['⇧','⌫','123','.?!','⏎'].includes(k);
+              const isSpace  = k==='⎵';
+              const isDel    = k==='⌫';
+              const isReturn = k==='⏎';
+              const isShift  = k==='⇧';
+              return (
+                <button key={k} onMouseDown={e => { e.preventDefault(); handleKey(k); inputRef.current?.focus(); }}
+                  style={{
+                    flexShrink: isSpace ? 1 : 0,
+                    width:  isSpace ? undefined
+                          : isReturn ? 88
+                          : (ri===2 && (isShift || isDel)) ? 42
+                          : ri===3 ? 76
+                          : 30,
+                    flex:   isSpace ? 1 : undefined,
+                    maxWidth: isSpace ? 168 : undefined,
+                    height: ri===3 ? 44 : 42,
+                    borderRadius: 5,
+                    border:'none',
+                    cursor:'pointer',
+                    fontFamily:'var(--sans)',
+                    fontSize: isDel ? 0 : isReturn || isAction ? 13 : 17,
+                    fontWeight: isAction ? 500 : 400,
+                    color:'var(--ink)',
+                    background: isAction && !isReturn
+                      ? 'var(--kb-action, rgba(172,177,185,1))'
+                      : isReturn
+                        ? TERRA
+                        : 'var(--key-bg, #fff)',
+                    boxShadow: isAction
+                      ? 'none'
+                      : '0 1px 0 rgba(0,0,0,.28)',
+                    display:'flex',alignItems:'center',justifyContent:'center',
+                    letterSpacing: isReturn ? '.02em' : 0,
+                    userSelect:'none',
+                    WebkitUserSelect:'none',
+                    transition:'background .1s',
+                  }}>
+                  {isDel ? (
+                    <svg width="17" height="13" viewBox="0 0 18 14" fill="none">
+                      <path d="M6.5 1H16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H6.5L1.5 7z" stroke="var(--ink)" strokeWidth="1.4" fill="none"/>
+                      <path d="M8.5 5l4 4m0-4l-4 4" stroke="var(--ink)" strokeWidth="1.4" strokeLinecap="round"/>
+                    </svg>
+                  ) : isReturn ? (
+                    <svg width="18" height="14" viewBox="0 0 18 14" fill="none">
+                      <path d="M16 2v4a2 2 0 0 1-2 2H4m0 0l4-4m-4 4 4 4" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  ) : isSpace ? 'espacio' : k}
+                </button>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+      </div>
+    </div>
+  );
+}
+
+// ── MeliPlay app — hero card ───────────────────────────────────────────────
+function HeroCard({ movie }) {
+  return (
+    <div style={{position:'relative',height:210,overflow:'hidden',flexShrink:0}}>
+      {movie.poster && movie.poster !== 'N/A' ? (
+        <img src={movie.poster} alt={movie.title}
+          style={{width:'100%',height:'100%',objectFit:'cover',objectPosition:'top'}}/>
+      ) : (
+        <div style={{width:'100%',height:'100%',background:'linear-gradient(135deg,#1a1008,#2c1a0a)'}}/>
+      )}
+      <div style={{position:'absolute',inset:0,background:'linear-gradient(to bottom,transparent 30%,rgba(0,0,0,.84))'}}/>
+      <div style={{position:'absolute',bottom:0,left:0,right:0,padding:'0 20px 18px'}}>
+        <div style={{fontFamily:'var(--serif)',fontSize:21,fontWeight:600,color:'#fff',lineHeight:1.15,
+          marginBottom:6,letterSpacing:'-.01em',textShadow:'0 2px 8px rgba(0,0,0,.5)'}}>{movie.title}</div>
+        <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:12,flexWrap:'wrap'}}>
+          <span style={{fontFamily:'var(--sans)',fontSize:11,color:'rgba(255,255,255,.65)'}}>{movie.year}</span>
+          <span style={{width:3,height:3,borderRadius:'50%',background:'rgba(255,255,255,.35)',flexShrink:0}}/>
+          <span style={{padding:'2px 7px',borderRadius:4,background:'rgba(200,82,42,.85)',
+            color:'#fff',fontFamily:'var(--sans)',fontSize:11,fontWeight:600}}>{movie.genre}</span>
+          {movie.rating && movie.rating !== 'N/A' && (
+            <>
+              <span style={{width:3,height:3,borderRadius:'50%',background:'rgba(255,255,255,.35)',flexShrink:0}}/>
+              <span style={{fontFamily:'var(--mono)',fontSize:11,color:'#FFD93D'}}>★ {movie.rating}</span>
+            </>
+          )}
+        </div>
+        <button style={{background:TERRA,border:'none',borderRadius:10,padding:'9px 22px',
+          fontFamily:'var(--sans)',fontSize:13,fontWeight:600,color:'#fff',cursor:'pointer',
+          boxShadow:'0 4px 14px rgba(200,82,42,.45)',letterSpacing:'-.01em'}}>▶ Ver ahora</button>
+      </div>
+    </div>
+  );
+}
+
+// ── Friend profile screen ────────────────────────────────────────────────────
+function FriendProfileScreen({ friend, movies, onBack }) {
+  const { ink } = useTheme();
+  const [tab, setTab]         = useState('peliculas');
+  const [closing, setClosing] = useState(false);
+  const [added, setAdded]     = useState(false);
+  const [addedItems, setAddedItems] = useState({});
+  const [toast, setToast]     = useState(null);
+
+  const handleAddItem = (m) => {
+    if (addedItems[m.id]) return;
+    setAddedItems(prev => ({...prev, [m.id]: true}));
+    setToast(m.title);
+    setTimeout(() => setToast(null), 2800);
+  };
+
+  const handleBack = () => { setClosing(true); setTimeout(onBack, 360); };
+
+  const lastWatched = movies[friend.mi] || movies[0];
+
+  // Mock watched lists: movies = even indices, series = odd indices
+  const peliculas = movies.filter((_, i) => i % 2 === 0);
+  const series    = movies.filter((_, i) => i % 2 !== 0);
+  const list      = tab === 'peliculas' ? peliculas : series;
+
+  return (
+    <div style={{
+      position:'absolute', inset:0, zIndex:20,
+      background:'var(--device-bg)',
+      display:'flex', flexDirection:'column', overflow:'hidden',
+      transition:'background .35s',
+      animation: closing ? 'pushOut .42s cubic-bezier(0.25,1,0.5,1) forwards'
+                         : 'pushIn .42s cubic-bezier(0.25,1,0.5,1)',
+    }}>
+      {/* status bar spacer */}
+      <div style={{height:62, flexShrink:0}}/>
+
+      {/* Header */}
+      <div style={{flexShrink:0, display:'flex', alignItems:'center',
+        padding:'2px 20px 12px'}}>
+        <button onClick={handleBack} style={{background:'none',border:'none',cursor:'pointer',
+          width:32,height:32,display:'flex',alignItems:'center',justifyContent:'center',
+          borderRadius:8,padding:0,flexShrink:0}}>
+          <svg width="10" height="17" viewBox="0 0 10 17" fill="none">
+            <path d="M8.5 1.5L2 8.5L8.5 15.5" stroke={ink} strokeWidth="2.2"
+              strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
+        <span style={{flex:1,textAlign:'center',fontFamily:'var(--sans)',fontSize:17,
+          fontWeight:700,color:'var(--ink)',letterSpacing:'-.02em'}}>{friend.name}</span>
+        <div style={{width:32, flexShrink:0}}/>
+      </div>
+
+      {/* Scrollable body */}
+      <div className="no-scrollbar" style={{flex:1,overflowY:'auto',paddingBottom:28}}>
+
+        {/* Hero banner — last watched */}
+        {lastWatched && (
+          <div style={{margin:'0 20px',borderRadius:18,overflow:'hidden',
+            position:'relative',height:192,
+            boxShadow:'var(--row-sh)',transition:'box-shadow .35s'}}>
+            {lastWatched.poster && lastWatched.poster !== 'N/A' ? (
+              <img src={lastWatched.poster}
+                style={{width:'100%',height:'100%',objectFit:'cover',objectPosition:'top'}}/>
+            ) : (
+              <div style={{width:'100%',height:'100%',background:'linear-gradient(135deg,#1a1008,#3c2010)'}}/>
+            )}
+            <div style={{position:'absolute',inset:0,
+              background:'linear-gradient(to bottom,rgba(0,0,0,.04) 25%,rgba(0,0,0,.84))'}}/>
+            <div style={{position:'absolute',bottom:0,left:0,right:0,padding:'12px 14px 16px'}}>
+              <div style={{fontFamily:'var(--sans)',fontSize:15,fontWeight:700,color:'#fff',
+                letterSpacing:'-.02em',marginBottom:10,lineHeight:1.2}}>
+                {lastWatched.title}
+              </div>
+              <div style={{display:'flex',gap:8,alignItems:'center'}}>
+                {/* + add button */}
+                <button onClick={() => setAdded(a => !a)} style={{
+                  width:34,height:34,borderRadius:'50%',flexShrink:0,cursor:'pointer',
+                  border:'1.5px solid rgba(255,255,255,.55)',
+                  background: added ? TERRA : 'rgba(255,255,255,.15)',
+                  backdropFilter:'blur(8px)',
+                  display:'flex',alignItems:'center',justifyContent:'center',
+                  transition:'background .2s',
+                }}>
+                  {added ? (
+                    <svg width="12" height="9" viewBox="0 0 12 9" fill="none">
+                      <path d="M1 4.5L4.5 8L11 1" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  ) : (
+                    <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                      <path d="M6.5 1.5v10M1.5 6.5h10" stroke="#fff" strokeWidth="2" strokeLinecap="round"/>
+                    </svg>
+                  )}
+                </button>
+                {/* Ver ahora */}
+                <button style={{
+                  height:34,paddingLeft:18,paddingRight:18,borderRadius:17,
+                  background:TERRA,border:'none',cursor:'pointer',
+                  fontFamily:'var(--sans)',fontSize:13,fontWeight:600,color:'#fff',
+                  letterSpacing:'-.01em',
+                  boxShadow:'0 3px 10px rgba(200,82,42,.4)',
+                }}>Ver ahora</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tabs */}
+        <div style={{display:'flex',borderBottom:'1.5px solid var(--divider)',margin:'20px 20px 0'}}>
+          {[['peliculas','Películas'],['series','Series']].map(([id,label]) => (
+            <button key={id} onClick={() => setTab(id)} style={{
+              background:'none',border:'none',cursor:'pointer',
+              padding:'8px 0',marginRight:24,
+              fontFamily:'var(--sans)',fontSize:13,
+              fontWeight: tab===id ? 700 : 400,
+              color: tab===id ? TERRA : 'var(--ink-sub)',
+              borderBottom: tab===id ? `2px solid ${TERRA}` : '2px solid transparent',
+              marginBottom:'-1.5px',transition:'color .2s',
+            }}>{label}</button>
+          ))}
+        </div>
+
+        {/* Content list */}
+        <div style={{padding:'12px 20px 0',display:'flex',flexDirection:'column',gap:10}}>
+          {list.map((m,i) => (
+            <ResultRow key={m.id+tab} movie={m} delay={i*.06}
+              added={!!addedItems[m.id]}
+              onPlusTap={() => handleAddItem(m)}/>
+          ))}
+          {list.length === 0 && (
+            <div style={{textAlign:'center',fontFamily:'var(--sans)',fontSize:13,
+              color:'var(--ink-sub)',padding:'32px 0'}}>Sin contenido</div>
+          )}
+        </div>
+      </div>
+
+      {/* Toast */}
+      {toast && (
+        <div style={{
+          position:'absolute',top:80,left:16,right:16,zIndex:30,
+          animation:'slideUpFade .38s cubic-bezier(.34,1.56,.64,1) both',
+          pointerEvents:'none',
+        }}>
+          <div style={{
+            background:'rgba(22,18,14,.93)',borderRadius:16,padding:'13px 16px',
+            display:'flex',alignItems:'center',gap:12,
+            boxShadow:'0 8px 32px rgba(0,0,0,.35),0 0 0 .5px rgba(255,255,255,.1)',
+            backdropFilter:'blur(16px)',WebkitBackdropFilter:'blur(16px)',
+          }}>
+            <div style={{width:32,height:32,borderRadius:8,background:TERRA,flexShrink:0,
+              display:'flex',alignItems:'center',justifyContent:'center'}}>
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path d="M2 7l3.5 3.5 6.5-6.5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+            <div style={{flex:1}}>
+              <div style={{fontFamily:'var(--sans)',fontSize:13,fontWeight:600,color:'#fff'}}>Añadido a tu lista ✓</div>
+              <div style={{fontFamily:'var(--sans)',fontSize:11,color:'rgba(255,255,255,.65)',lineHeight:1.4,marginTop:1,
+                overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{toast}</div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── MeliPlay app home screen ────────────────────────────────────────────────
+function MiPerfilView({ featured, loadingFt }) {
+  const { ink } = useTheme();
+  const [perfilTab, setPerfilTab]   = useState('peliculas');
+  const [addedItems, setAddedItems] = useState({});
+  const [toast, setToast]           = useState(null);
+  const peliculas = featured.filter((_,i) => i%2===0);
+  const series    = featured.filter((_,i) => i%2!==0);
+  const list      = perfilTab==='peliculas' ? peliculas : series;
+  const handleAdd = (m) => {
+    if (addedItems[m.id]) return;
+    setAddedItems(prev => ({...prev, [m.id]: true}));
+    setToast(m.title);
+    setTimeout(() => setToast(null), 2800);
+  };
+  return (
+    <div style={{display:'flex',flexDirection:'column',animation:'fadeUpIn .3s ease both'}}>
+      {/* Profile header */}
+      <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:10,padding:'28px 20px 20px'}}>
+        <div style={{width:72,height:72,borderRadius:'50%',background:TERRA,
+          display:'flex',alignItems:'center',justifyContent:'center',
+          boxShadow:'0 4px 16px rgba(200,82,42,.35)'}}>
+          <span style={{fontFamily:'var(--sans)',fontSize:26,fontWeight:700,color:'#fff'}}>U</span>
+        </div>
+        <div style={{textAlign:'center'}}>
+          <div style={{fontFamily:'var(--sans)',fontSize:12,color:'var(--ink-sub)'}}> ca.arcila10@outlook.com</div>
+        </div>
+      </div>
+
+      {/* Mi Lista heading */}
+      <div style={{padding:'0 20px',marginBottom:2}}>
+        <span style={{fontFamily:'var(--sans)',fontSize:16,fontWeight:700,color:'var(--ink)',letterSpacing:'-.01em'}}>Mi Lista</span>
+      </div>
+
+      {/* Tabs */}
+      <div style={{display:'flex',borderBottom:'1.5px solid var(--divider)',margin:'10px 20px 0'}}>
+        {['peliculas','series'].map(tab => {
+          const active = perfilTab === tab;
+          return (
+            <button key={tab} onClick={() => setPerfilTab(tab)} style={{
+              background:'none',border:'none',cursor:'pointer',
+              padding:'8px 0',marginRight:24,
+              fontFamily:'var(--sans)',fontSize:13,fontWeight: active ? 700 : 400,
+              color: active ? TERRA : 'var(--ink-sub)',
+              borderBottom: active ? `2px solid ${TERRA}` : '2px solid transparent',
+              marginBottom:'-1.5px',transition:'color .2s',
+            }}>
+              {tab === 'peliculas' ? 'Películas' : 'Series'}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Content list */}
+      <div style={{display:'flex',flexDirection:'column',gap:10,padding:'14px 20px 0'}}>
+        {loadingFt ? (
+          [0,1,2].map(i => (
+            <div key={i} style={{height:76,borderRadius:14,background:'var(--btn-s-bg)',position:'relative',overflow:'hidden'}}>
+              <div style={{position:'absolute',inset:0,
+                background:'linear-gradient(90deg,transparent,rgba(200,82,42,.1) 50%,transparent)',
+                animation:`shimmerSweep 1.2s ease-in-out ${i*.15}s infinite`}}/>
+            </div>
+          ))
+        ) : list.length === 0 ? (
+          <div style={{fontFamily:'var(--sans)',fontSize:13,color:'var(--ink-sub)',textAlign:'center',marginTop:32}}>Sin contenido</div>
+        ) : list.map((m,i) => (
+          <ResultRow key={m.id} movie={m} delay={i*.06}
+            added={!!addedItems[m.id]} onPlusTap={() => handleAdd(m)}/>
+        ))}
+      </div>
+
+      {/* Toast */}
+      {toast && (
+        <div style={{position:'absolute',top:16,left:16,right:16,zIndex:30,
+          animation:'slideUpFade .38s cubic-bezier(.34,1.56,.64,1) both',pointerEvents:'none'}}>
+          <div style={{background:'rgba(22,18,14,.93)',borderRadius:16,padding:'13px 16px',
+            display:'flex',alignItems:'center',gap:12,
+            boxShadow:'0 8px 32px rgba(0,0,0,.35),0 0 0 .5px rgba(255,255,255,.1)',
+            backdropFilter:'blur(16px)',WebkitBackdropFilter:'blur(16px)'}}>
+            <div style={{width:32,height:32,borderRadius:8,background:TERRA,flexShrink:0,
+              display:'flex',alignItems:'center',justifyContent:'center'}}>
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path d="M2 7l3.5 3.5 6.5-6.5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+            <div style={{flex:1}}>
+              <div style={{fontFamily:'var(--sans)',fontSize:13,fontWeight:600,color:'#fff'}}>Añadido a tu lista ✓</div>
+              <div style={{fontFamily:'var(--sans)',fontSize:11,color:'rgba(255,255,255,.65)',lineHeight:1.4,marginTop:1,
+                overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{toast}</div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MeliPlayAppScreen({ savedMovies=[], onBack, onMovieAdded }) {
+  const { ink } = useTheme();
+  const [closing, setClosing]         = useState(false);
+  const [featured, setFeatured]       = useState([]);
+  const [loadingFt, setLoadingFt]     = useState(true);
+  const [activeTab, setActiveTab]     = useState('inicio');
+  const [searchKbVisible, setSearchKbVisible] = useState(false);
+  const [selectedFriend, setSelectedFriend]   = useState(null);
+  const [addedMovies, setAddedMovies]         = useState({});
+  const [homeToast, setHomeToast]             = useState(null);
+
+  const handleHomeAdd = (m) => {
+    if (addedMovies[m.id]) return;
+    setAddedMovies(prev => ({...prev, [m.id]: true}));
+    setHomeToast(m.title);
+    setTimeout(() => setHomeToast(null), 2800);
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+    const IDS = ['tt0468569','tt1375666','tt0816692','tt0109830','tt0137523','tt0167260','tt0120737'];
+    Promise.all(IDS.map(id =>
+      fetch(`https://www.omdbapi.com/?i=${id}&apikey=${OMDB_KEY}`)
+        .then(r => r.json())
+        .then(d => d.Response === 'True' ? {
+          id:d.imdbID, title:d.Title, year:parseInt(d.Year)||0,
+          genre:d.Genre?.split(',')[0]||'Drama',
+          poster:d.Poster, rating:d.imdbRating,
+        } : null)
+        .catch(() => null)
+    )).then(res => { if (!cancelled) { setFeatured(res.filter(Boolean)); setLoadingFt(false); } });
+    return () => { cancelled = true; };
+  }, []);
+
+  const handleBack = () => { setClosing(true); setTimeout(() => onBack(), 360); };
+
+  return (
+    <div style={{
+      width:'100%', height:'100%',
+      background:'var(--device-bg)',
+      display:'flex', flexDirection:'column', overflow:'hidden',
+      animation: closing ? 'appBack .36s cubic-bezier(.32,.72,0,1) forwards'
+                         : 'appLaunch .38s cubic-bezier(.34,1.56,.64,1)',
+      transition:'background .35s',
+    }}>
+      {/* Friend profile overlay */}
+      {selectedFriend && (
+        <FriendProfileScreen
+          friend={selectedFriend}
+          movies={featured}
+          onBack={() => setSelectedFriend(null)}
+        />
+      )}
+
+      {/* status bar spacer */}
+      <div style={{height:62,flexShrink:0}}/>
+
+      {/* ── App header ── */}
+      <div style={{flexShrink:0}}>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',
+          padding:'2px 20px 10px'}}>
+          {activeTab === 'buscar' ? (
+            <button onClick={() => setActiveTab('inicio')} style={{background:'none',border:'none',cursor:'pointer',
+              width:32,height:32,display:'flex',alignItems:'center',justifyContent:'center',
+              borderRadius:8,padding:0,flexShrink:0}}>
+              <svg width="10" height="17" viewBox="0 0 10 17" fill="none">
+                <path d="M8.5 1.5L2 8.5L8.5 15.5" stroke={ink} strokeWidth="2.2"
+                  strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+          ) : (
+            <div style={{width:32,height:32,flexShrink:0}}/>
+          )}
+          <MeliMark size={19} dotColor={TERRA}/>
+          <div style={{width:32,height:32,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+              <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" stroke={ink} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"
+                stroke={ink} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Buscar tab — full search view ── */}
+      {activeTab === 'buscar' && (
+        <MeliPlaySearchView onMovieAdded={onMovieAdded} onKbChange={setSearchKbVisible}/>
+      )}
+
+      {/* ── Scrollable body (non-buscar tabs) ── */}
+      {activeTab !== 'buscar' && (
+      <div className="no-scrollbar" style={{flex:1,overflowY:'auto',paddingBottom:72}}>
+
+        {/* ── Mi Perfil tab ── */}
+        {activeTab === 'perfil' && <MiPerfilView featured={featured} loadingFt={loadingFt}/>}
+
+        {/* ── Inicio tab content ── */}
+        {(activeTab === 'inicio' || activeTab === 'catalogo') && <>
+
+        {/* Featured banner — horizontal scroll carousel */}
+        {loadingFt ? (
+          <div className="no-scrollbar" style={{display:'flex',gap:12,overflowX:'auto',padding:'24px 20px 4px'}}>
+            {[0,1].map(i => (
+              <div key={i} style={{flexShrink:0,width:272,height:182,borderRadius:14,
+                background:'var(--btn-s-bg)',overflow:'hidden',position:'relative'}}>
+                <div style={{position:'absolute',inset:0,
+                  background:'linear-gradient(90deg,transparent,rgba(200,82,42,.1) 50%,transparent)',
+                  animation:`shimmerSweep 1.2s ease-in-out ${i*.2}s infinite`}}/>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="no-scrollbar" style={{display:'flex',gap:12,overflowX:'auto',padding:'24px 20px 4px'}}>
+            {featured.map((m,i) => {
+              const CONTACTS = [4,2,6,1,3,5,7];
+              const MATCHES  = [94,87,91,78,96,83,89];
+              const contacts = CONTACTS[i % CONTACTS.length];
+              const match    = MATCHES[i % MATCHES.length];
+              return (
+                <div key={m.id} style={{flexShrink:0,width:272,height:182,borderRadius:14,
+                  overflow:'hidden',position:'relative',
+                  boxShadow:'var(--row-sh)',
+                  animation:`fadeUpIn .4s cubic-bezier(.34,1.56,.64,1) ${i*.07}s both`}}>
+                  {m.poster && m.poster !== 'N/A' ? (
+                    <img src={m.poster} alt={m.title}
+                      style={{width:'100%',height:'100%',objectFit:'cover',objectPosition:'top'}}/>
+                  ) : (
+                    <div style={{width:'100%',height:'100%',background:'linear-gradient(135deg,#1a1008,#2c1a0a)'}}/>
+                  )}
+                  <div style={{position:'absolute',inset:0,
+                    background:'linear-gradient(to bottom,transparent 22%,rgba(0,0,0,.88))'}}/>
+                  <div style={{position:'absolute',bottom:0,left:0,right:0,padding:'0 13px 13px'}}>
+                    <div style={{fontFamily:'var(--serif)',fontSize:15,fontWeight:600,color:'#fff',
+                      letterSpacing:'-.01em',lineHeight:1.2,marginBottom:7,
+                      textShadow:'0 1px 4px rgba(0,0,0,.5)',
+                      overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{m.title}</div>
+                    <div style={{display:'flex',alignItems:'center',gap:6,flexWrap:'nowrap'}}>
+                      <div style={{padding:'2px 8px',borderRadius:4,background:TERRA,flexShrink:0,
+                        fontFamily:'var(--mono)',fontSize:9,fontWeight:700,color:'#fff',letterSpacing:'.02em'}}>
+                        {match}% match
+                      </div>
+                      <div style={{display:'flex',alignItems:'center',gap:3,minWidth:0}}>
+                        <svg width="12" height="10" viewBox="0 0 14 11" fill="none" style={{flexShrink:0}}>
+                          <circle cx="5" cy="3" r="2.2" stroke="rgba(255,255,255,.78)" strokeWidth="1.3"/>
+                          <circle cx="9.5" cy="3" r="2.2" stroke="rgba(255,255,255,.78)" strokeWidth="1.3"/>
+                          <path d="M1 10.5c0-2.2 1.8-4 4-4" stroke="rgba(255,255,255,.78)" strokeWidth="1.3" strokeLinecap="round"/>
+                          <path d="M5.5 10.5c0-2.2 1.8-4 4-4s4 1.8 4 4" stroke="rgba(255,255,255,.78)" strokeWidth="1.3" strokeLinecap="round"/>
+                        </svg>
+                        <span style={{fontFamily:'var(--sans)',fontSize:9,color:'rgba(255,255,255,.82)',
+                          overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+                          Visto por <b style={{fontWeight:600}}>{contacts}</b> de tus contactos
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Familia & Amigos */}
+        <div style={{marginTop:24}}>
+          {/* Section header */}
+          <div style={{padding:'0 20px',marginBottom:12}}>
+            <div style={{height:16,marginBottom:3}}/>
+            <span style={{fontFamily:'var(--sans)',fontSize:16,fontWeight:700,
+              color:'var(--ink)',letterSpacing:'-.01em'}}>Familia &amp; Amigos</span>
+          </div>
+
+          {/* Cards */}
+          {loadingFt ? (
+            <div className="no-scrollbar" style={{display:'flex',gap:12,overflowX:'auto',padding:'0 20px'}}>
+              {[0,1,2,3].map(i => (
+                <div key={i} style={{width:108,borderRadius:12,overflow:'hidden',
+                  background:'var(--btn-s-bg)',flexShrink:0}}>
+                  <div style={{height:108,position:'relative'}}>
+                    <div style={{position:'absolute',inset:0,
+                      background:'linear-gradient(90deg,transparent,rgba(200,82,42,.1) 50%,transparent)',
+                      animation:`shimmerSweep 1.2s ease-in-out ${i*.15}s infinite`}}/>
+                  </div>
+                  <div style={{padding:'8px 9px 10px',display:'flex',flexDirection:'column',gap:5}}>
+                    <div style={{display:'flex',alignItems:'center',gap:5}}>
+                      <div style={{width:20,height:20,borderRadius:'50%',background:'var(--divider)',flexShrink:0}}/>
+                      <div style={{height:8,borderRadius:4,background:'var(--divider)',flex:1}}/>
+                    </div>
+                    <div style={{height:8,borderRadius:4,background:'var(--divider)',width:'80%'}}/>
+                    <div style={{height:7,borderRadius:4,background:'var(--divider)',width:'55%'}}/>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="no-scrollbar" style={{display:'flex',gap:12,overflowX:'auto',padding:'0 20px 8px'}}>
+              {[
+                {name:'Carlos', initials:'CA', status:'viendo',   mi:1},
+                {name:'Ana',    initials:'AN', status:'viendo',   mi:4},
+                {name:'Luis',   initials:'LU', status:'reviendo', mi:3},
+                {name:'María',  initials:'MA', status:'terminó',  mi:2},
+                {name:'Jorge',  initials:'JO', status:'terminó',  mi:0},
+              ].map((fr, i) => {
+                const movie = featured[fr.mi] || featured[0];
+                if (!movie) return null;
+                const isLive = fr.status === 'viendo';
+                return (
+                  <div key={fr.name} onClick={() => setSelectedFriend(fr)}
+                    style={{
+                    flexShrink:0, width:108, borderRadius:12, overflow:'hidden',
+                    boxShadow:'var(--row-sh)', cursor:'pointer',
+                    animation:`fadeUpIn .4s cubic-bezier(.34,1.56,.64,1) ${i*.07}s both`,
+                    transition:'box-shadow .35s',
+                  }}>
+                    {/* Poster */}
+                    <div style={{height:108,position:'relative',overflow:'hidden'}}>
+                      {movie.poster && movie.poster !== 'N/A' ? (
+                        <img src={movie.poster}
+                          style={{width:'100%',height:'100%',objectFit:'cover',objectPosition:'top'}}/>
+                      ) : (
+                        <div style={{width:'100%',height:'100%',background:'linear-gradient(135deg,#1a1008,#2c1a0a)'}}/>
+                      )}
+                      <div style={{position:'absolute',inset:0,
+                        background:'linear-gradient(to bottom,rgba(0,0,0,.08),rgba(0,0,0,.52))'}}/>
+                      {/* VIENDO pill — only for live */}
+                      {isLive && (
+                        <div style={{
+                          position:'absolute',top:7,left:7,
+                          display:'flex',alignItems:'center',gap:3,
+                          padding:'2px 6px',borderRadius:10,
+                          background:'rgba(80,148,100,.90)',
+                          backdropFilter:'blur(4px)',
+                        }}>
+                          <span style={{width:5,height:5,borderRadius:'50%',background:'#fff',
+                            display:'inline-block',flexShrink:0,
+                            boxShadow:'0 0 0 0 rgba(255,255,255,.6)',
+                            animation:'ringPing 1.4s ease-out infinite'}}/>
+                          <span style={{fontFamily:'var(--mono)',fontSize:7,fontWeight:700,
+                            color:'#fff',letterSpacing:'.04em'}}>VIENDO</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Friend info */}
+                    <div style={{
+                      background:'var(--row-bg)',padding:'8px 9px 10px',
+                      transition:'background .35s',
+                    }}>
+                      <div style={{display:'flex',alignItems:'center',gap:5,marginBottom:4}}>
+                        <div style={{
+                          width:20,height:20,borderRadius:'50%',background:'var(--grabber)',
+                          display:'flex',alignItems:'center',justifyContent:'center',
+                          flexShrink:0,border:'1.5px solid var(--device-bg)',
+                        }}>
+                          <span style={{fontFamily:'var(--sans)',fontSize:7,fontWeight:700,color:'var(--ink)'}}>
+                            {fr.initials}
+                          </span>
+                        </div>
+                        <span style={{fontFamily:'var(--sans)',fontSize:10,fontWeight:700,
+                          color:'var(--ink)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+                          {fr.name}
+                        </span>
+                      </div>
+                      <div style={{fontFamily:'var(--serif)',fontSize:9,fontWeight:500,
+                        color:'var(--ink)',lineHeight:1.2,
+                        overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+                        {movie.title}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Para ti */}
+        {!loadingFt && featured.length>2 && (
+          <div style={{marginTop:40,paddingBottom:8}}>
+            <div style={{padding:'0 20px',marginBottom:12}}>
+              <span style={{fontFamily:'var(--sans)',fontSize:16,fontWeight:700,
+                color:'var(--ink)',letterSpacing:'-.01em'}}>Para ti</span>
+            </div>
+            <div style={{display:'flex',flexDirection:'column',gap:10,padding:'0 20px'}}>
+              {featured.slice(2,5).map((m,i) => (
+                <ResultRow key={m.id} movie={m} delay={i*.07}
+                  added={!!addedMovies[m.id]}
+                  onPlusTap={() => handleHomeAdd(m)}/>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div style={{height:16}}/>
+        </>}
+
+      </div>
+      )}
+
+      {/* Home toast */}
+      {homeToast && (
+        <div style={{position:'absolute',top:80,left:16,right:16,zIndex:30,
+          animation:'slideUpFade .38s cubic-bezier(.34,1.56,.64,1) both',pointerEvents:'none'}}>
+          <div style={{background:'rgba(22,18,14,.93)',borderRadius:16,padding:'13px 16px',
+            display:'flex',alignItems:'center',gap:12,
+            boxShadow:'0 8px 32px rgba(0,0,0,.35),0 0 0 .5px rgba(255,255,255,.1)',
+            backdropFilter:'blur(16px)',WebkitBackdropFilter:'blur(16px)'}}>
+            <div style={{width:32,height:32,borderRadius:8,background:TERRA,flexShrink:0,
+              display:'flex',alignItems:'center',justifyContent:'center'}}>
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path d="M2 7l3.5 3.5 6.5-6.5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+            <div style={{flex:1}}>
+              <div style={{fontFamily:'var(--sans)',fontSize:13,fontWeight:600,color:'#fff'}}>Añadido a tu lista ✓</div>
+              <div style={{fontFamily:'var(--sans)',fontSize:11,color:'rgba(255,255,255,.65)',lineHeight:1.4,marginTop:1,
+                overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{homeToast}</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Bottom tab bar — floating pill + separate search ── */}
+      <div style={{
+        position:'absolute',bottom:0,left:0,right:0,height:76,
+        display:'flex',alignItems:'center',justifyContent:'space-between',
+        padding:'0 16px 12px',
+        zIndex:20,
+        pointerEvents:'none',
+        transform: (activeTab==='buscar' && searchKbVisible) ? 'translateY(100%)' : 'translateY(0)',
+        transition:'transform .3s cubic-bezier(.4,0,.2,1)',
+      }}>
+        {/* Main nav pill: Inicio · Catálogo · Mi perfil */}
+        <div style={{
+          display:'flex',alignItems:'center',
+          background:'var(--dock-bg)',
+          backdropFilter:'var(--dock-blur)',WebkitBackdropFilter:'var(--dock-blur)',
+          boxShadow:'var(--dock-sh)',
+          borderRadius:999,
+          padding:'5px 6px',
+          gap:2,
+          transition:'background .35s,box-shadow .35s',
+          pointerEvents:'auto',
+        }}>
+          {[
+            {id:'inicio',   label:'Inicio'},
+            {id:'perfil',   label:'Mi perfil'},
+            {id:'catalogo', label:'Catálogo'},
+          ].map(t => {
+            const active = activeTab === t.id;
+            const c = active ? TERRA : 'var(--ink-sub)';
+            let icon;
+            if (t.id==='inicio') icon = (
+              <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                <path d="M3 9L10 3l7 6v8h-4v-4H7v4H3V9Z"
+                  stroke={active ? TERRA : ink} strokeWidth="1.6"
+                  fill={active ? 'rgba(200,82,42,.15)' : 'none'}
+                  strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            );
+            else if (t.id==='catalogo') icon = (
+              <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                <rect x="3" y="3" width="6" height="6" rx="1.5"
+                  stroke={active ? TERRA : ink} strokeWidth="1.6"
+                  fill={active ? 'rgba(200,82,42,.15)' : 'none'}/>
+                <rect x="11" y="3" width="6" height="6" rx="1.5"
+                  stroke={active ? TERRA : ink} strokeWidth="1.6"
+                  fill={active ? 'rgba(200,82,42,.15)' : 'none'}/>
+                <rect x="3" y="11" width="6" height="6" rx="1.5"
+                  stroke={active ? TERRA : ink} strokeWidth="1.6"
+                  fill={active ? 'rgba(200,82,42,.15)' : 'none'}/>
+                <rect x="11" y="11" width="6" height="6" rx="1.5"
+                  stroke={active ? TERRA : ink} strokeWidth="1.6"
+                  fill={active ? 'rgba(200,82,42,.15)' : 'none'}/>
+              </svg>
+            );
+            else icon = (
+              <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                <circle cx="10" cy="7" r="3" stroke={active ? TERRA : ink} strokeWidth="1.6"
+                  fill={active ? 'rgba(200,82,42,.15)' : 'none'}/>
+                <path d="M4 17.5c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke={active ? TERRA : ink}
+                  strokeWidth="1.6" strokeLinecap="round"/>
+              </svg>
+            );
+            return (
+              <button key={t.id} onClick={() => setActiveTab(t.id)} style={{
+                background: active ? 'rgba(200,82,42,.1)' : 'transparent',
+                border:'none', cursor:'pointer',
+                display:'flex',flexDirection:'column',alignItems:'center',gap:2,
+                padding:'7px 0',
+                width:80,
+                borderRadius:999,
+                transition:'background .2s',
+              }}>
+                {icon}
+                <span style={{
+                  fontFamily:'var(--sans)',fontSize:9,letterSpacing:'.01em',
+                  fontWeight: active ? 700 : 400,
+                  color: active ? TERRA : 'var(--ink-sub)',
+                  transition:'color .2s',
+                }}>{t.label}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Buscar — separate floating circle button */}
+        <button onClick={() => setActiveTab('buscar')} style={{
+          width:50, height:50,
+          borderRadius:'50%',
+          background: activeTab==='buscar' ? TERRA : 'var(--dock-bg)',
+          backdropFilter:'var(--dock-blur)',WebkitBackdropFilter:'var(--dock-blur)',
+          boxShadow: activeTab==='buscar'
+            ? '0 4px 16px rgba(200,82,42,.45)'
+            : 'var(--dock-sh)',
+          border:'none', cursor:'pointer',
+          display:'flex',alignItems:'center',justifyContent:'center',
+          transition:'background .25s,box-shadow .25s',
+          pointerEvents:'auto',
+          flexShrink:0,
+        }}>
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <circle cx="9" cy="9" r="5.5"
+              stroke={activeTab==='buscar' ? '#fff' : ink} strokeWidth="1.6"/>
+            <path d="M13.5 13.5L17 17"
+              stroke={activeTab==='buscar' ? '#fff' : ink} strokeWidth="1.8" strokeLinecap="round"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ── Live demo ──────────────────────────────────────────────────────────────
 function LiveDemo() {
   const [state, setState]       = useState('home');
-  const [savedMovie, setSavedMovie] = useState(null);
+  const [savedMovie, setSavedMovie]   = useState(null);
+  const [savedMovies, setSavedMovies] = useState([]);
   const [uiStyle, setUIStyle]   = useState('neuro');
   const [mode, setMode]         = useState('light');
-  const timeouts = useRef([]);
+  const [compartirToast, setCompartirToast] = useState(false);
+  const timeouts   = useRef([]);
+  const prevStateRef = useRef('home');
+
+  const showCompartirToast = () => {
+    setCompartirToast(true);
+    setTimeout(() => setCompartirToast(false), 3200);
+  };
 
   const presetKey = `${uiStyle}-${mode}`;
   const preset    = PRESETS[presetKey];
@@ -805,6 +2270,7 @@ function LiveDemo() {
   const STATE_LABELS = {
     'home':'00 · home — tap Buscar','sheet':'01 · search sheet',
     'confirming':'02 · guardando…','home-updated':'03 · guardado ✓',
+    'meliplay-home':'04 · MeliPlay app',
   };
 
   return (
@@ -815,16 +2281,34 @@ function LiveDemo() {
         <div style={{position:'relative',display:'inline-block'}}>
           <IOSDevice width={370} height={800}>
             <div style={{width:'100%',height:'100%',position:'relative',overflow:'hidden'}}>
-              {(state==='home'||state==='home-updated') && (
-                <HomeScreen
-                  withBadge={state==='home-updated'} shimmer={state==='home-updated'}
-                  savedMovie={savedMovie}
-                  onWidgetTap={action => { if (action==='buscar') setState('sheet'); }}
+              {/* HomeScreen stays mounted when sheet is open so backdrop-filter has content to blur */}
+              {(state==='home'||state==='home-updated'||state==='sheet'||state==='confirming') && (
+                <div style={{
+                  position:'absolute',inset:0,
+                  pointerEvents: (state==='sheet'||state==='confirming') ? 'none' : 'auto',
+                }}>
+                  <HomeScreen
+                    withBadge={state==='home-updated'} shimmer={state==='home-updated'}
+                    savedMovie={savedMovie}
+                    onWidgetTap={action => { if (action==='buscar') setState('sheet'); else if (action==='compartir') showCompartirToast(); }}
+                    onMeliPlayTap={() => { prevStateRef.current = state; setState('meliplay-home'); }}
+                  />
+                </div>
+              )}
+              {state==='meliplay-home' && (
+                <MeliPlayAppScreen
+                  savedMovies={savedMovies}
+                  onBack={() => setState(prevStateRef.current)}
+                  onMovieAdded={m => setSavedMovies(prev => prev.some(s=>s.id===m.id) ? prev : [...prev, m])}
                 />
               )}
               {(state==='sheet'||state==='confirming') && (
                 <SearchSheetInteractive
-                  onResultTap={m => { setSavedMovie(m); setState('confirming'); }}
+                  onResultTap={m => {
+                    setSavedMovie(m);
+                    setSavedMovies(prev => prev.some(s => s.id===m.id) ? prev : [...prev, m]);
+                    setState('confirming');
+                  }}
                   onDismiss={() => setState('home')}
                 />
               )}
@@ -833,6 +2317,41 @@ function LiveDemo() {
                   animation:'posterFly .55s cubic-bezier(.34,1.56,.64,1) forwards',
                   '--fx':'50px','--fy':'-150px'}}>
                   <Poster movie={savedMovie} size={56} radius={6} withGlow/>
+                </div>
+              )}
+              {/* Compartir toast */}
+              {compartirToast && (
+                <div style={{
+                  position:'absolute', bottom:100, left:16, right:16, zIndex:200,
+                  animation:'slideUpFade .38s cubic-bezier(.34,1.56,.64,1) both',
+                }}>
+                  <div style={{
+                    background:'rgba(22,18,14,.93)',
+                    borderRadius:16, padding:'14px 18px',
+                    display:'flex', alignItems:'center', gap:12,
+                    boxShadow:'0 8px 32px rgba(0,0,0,.35), 0 0 0 .5px rgba(255,255,255,.1)',
+                    backdropFilter:'blur(16px)', WebkitBackdropFilter:'blur(16px)',
+                  }}>
+                    <div style={{
+                      width:36, height:36, borderRadius:10, background:TERRA, flexShrink:0,
+                      display:'flex', alignItems:'center', justifyContent:'center',
+                    }}>
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <circle cx="13" cy="3" r="2" fill="#fff"/>
+                        <circle cx="13" cy="13" r="2" fill="#fff"/>
+                        <circle cx="3"  cy="8"  r="2" fill="#fff"/>
+                        <path d="M4.8 7L10.8 4M4.8 9L10.8 12" stroke="#fff" strokeWidth="1.5" strokeLinecap="round"/>
+                      </svg>
+                    </div>
+                    <div style={{flex:1}}>
+                      <div style={{fontFamily:'var(--sans)',fontSize:13,fontWeight:600,color:'#fff',letterSpacing:'-.01em',marginBottom:3}}>
+                        Link copiado ✓
+                      </div>
+                      <div style={{fontFamily:'var(--sans)',fontSize:12,color:'rgba(255,255,255,.72)',lineHeight:1.4}}>
+                        Ya lo puedes compartir con tu familia y amigos
+                      </div>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
