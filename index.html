@@ -81,6 +81,7 @@
     @keyframes appLaunch  {from{opacity:0;transform:scale(.92)}to{opacity:1;transform:scale(1)}}
     @keyframes appBack    {from{transform:translateX(0)}to{transform:translateX(105%)}}
     @keyframes pushIn     {from{transform:translateX(100%)}to{transform:translateX(0)}}
+    @keyframes deleteSlide{0%{opacity:1;transform:translateX(0) scale(1)}60%{opacity:0;transform:translateX(60px) scale(.95)}100%{opacity:0;transform:translateX(80px) scale(.92)}}
     @keyframes pushOut    {from{transform:translateX(0)}to{transform:translateX(100%)}}
     @keyframes caretBlink {0%,49%{opacity:1}50%,100%{opacity:0}}
     .dark-search-input::placeholder{color:#8E8E93}
@@ -317,8 +318,8 @@ const PRESETS = {
     _ink:'#F5F0E8', _dark:true,
   },
   'glass-light': {
-    '--app-bg':'#D4C0AA','--device-bg':'linear-gradient(170deg,#D8B89A 0%,#C8896B 50%,#A6634A 100%)',
-    '--device-sh':'0 40px 80px rgba(0,0,0,.2),0 0 0 1px rgba(0,0,0,.12)',
+    '--app-bg':'#F0EDEA','--device-bg':'linear-gradient(170deg,#FAFAF8 0%,#F0EDE8 50%,#E8E4DF 100%)',
+    '--device-sh':'0 40px 80px rgba(0,0,0,.12),0 0 0 1px rgba(0,0,0,.07)',
     '--widget-bg':'rgba(255,255,255,.22)','--widget-sh':'0 8px 28px rgba(0,0,0,.1),0 0 0 .5px rgba(255,255,255,.4)','--widget-blur':'blur(20px) saturate(180%)',
     '--btn-p-sh':'0 3px 10px rgba(200,82,42,.45)','--btn-p-psh':'0 1px 4px rgba(200,82,42,.3)',
     '--btn-s-bg':'rgba(255,255,255,.25)','--btn-s-sh':'0 1px 4px rgba(0,0,0,.1),0 0 0 .5px rgba(255,255,255,.3)',
@@ -730,26 +731,37 @@ function SectionLabel({ label }) {
 }
 
 // ── Result row ─────────────────────────────────────────────────────────────
-function ResultRow({ movie, delay=0, added, onPlusTap }) {
-  const dot = <span style={{width:3,height:3,borderRadius:'50%',background:'var(--ink-sub)',flexShrink:0}}/>;
+function ResultRow({ movie, delay=0, added, onPlusTap, actionSlot, deleting=false }) {
   return (
     <div style={{
       display:'flex',gap:12,alignItems:'flex-start',padding:10,borderRadius:14,
       background:'var(--row-bg)',
       boxShadow:added?'var(--row-ash)':'var(--row-sh)',
-      animation:`fadeUpIn .4s cubic-bezier(.34,1.56,.64,1) ${delay}s both`,
+      animation: deleting
+        ? 'deleteSlide .35s cubic-bezier(0.4,0,1,1) forwards'
+        : `fadeUpIn .4s cubic-bezier(.34,1.56,.64,1) ${delay}s both`,
       transition:'box-shadow .3s,background .35s',
     }}>
       <Poster movie={movie} size={56} radius={6} withGlow={added}/>
-      <div style={{flex:1,paddingTop:4}}>
-        <div style={{fontFamily:'var(--serif)',fontSize:17,fontWeight:500,color:'var(--ink)',letterSpacing:'-.01em',lineHeight:1.15,marginBottom:4}}>{movie.title}</div>
-        <div style={{display:'flex',alignItems:'center',gap:8,fontFamily:'var(--sans)',fontSize:12,color:'var(--ink-sub)',flexWrap:'wrap'}}>
-          <span>{movie.year}</span>
-          {dot}
-          <span style={{padding:'2px 7px',borderRadius:4,background:'rgba(200,82,42,.1)',color:TERRA,fontWeight:600,letterSpacing:'.02em'}}>{movie.genre}</span>
+      <div style={{flex:1,paddingTop:2,minWidth:0}}>
+        <div style={{fontFamily:'var(--sans)',fontSize:15,fontWeight:700,color:'var(--ink)',
+          letterSpacing:'-.02em',lineHeight:1.2,marginBottom: movie.plot ? 3 : 5,
+          overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{movie.title}</div>
+        {movie.plot && (
+          <div style={{fontFamily:'var(--sans)',fontSize:11,color:'var(--ink-sub)',
+            lineHeight:1.4,marginBottom:5,
+            display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical',overflow:'hidden'}}>
+            {movie.plot}
+          </div>
+        )}
+        <div style={{display:'flex',alignItems:'center',gap:6,fontFamily:'var(--sans)',fontSize:11,color:'var(--ink-sub)',flexWrap:'nowrap'}}>
+          <span style={{fontSize:11}}>{movie.year}</span>
+          <span style={{width:3,height:3,borderRadius:'50%',background:'var(--ink-sub)',flexShrink:0,display:'inline-block'}}/>
+          <span style={{padding:'1px 6px',borderRadius:4,background:'rgba(200,82,42,.1)',
+            color:TERRA,fontWeight:600,fontSize:10,letterSpacing:'.01em',flexShrink:0}}>{movie.genre}</span>
         </div>
       </div>
-      <CardAddButton added={added} onAdd={onPlusTap}/>
+      {actionSlot !== undefined ? actionSlot : <CardAddButton added={added} onAdd={onPlusTap}/>}
     </div>
   );
 }
@@ -843,13 +855,27 @@ function SearchSheetInteractive({ onResultTap, onDismiss }) {
         const res  = await fetch(`https://www.omdbapi.com/?s=${encodeURIComponent(val.trim())}&apikey=${OMDB_KEY}`);
         const data = await res.json();
         if (data.Response === 'True') {
-          setDisplayed(data.Search.map(m => ({
+          const basic = data.Search.slice(0,6).map(m => ({
             id:m.imdbID, title:m.Title, year:parseInt(m.Year)||0,
             type:m.Type==='series'?'series':'movie',
             genre:m.Type==='series'?'Serie':'Película', poster:m.Poster,
-          })));
+          }));
+          setDisplayed(basic);
           const term = val.trim();
           setRecents(prev => [term, ...prev.filter(r => r.toLowerCase() !== term.toLowerCase())].slice(0, 5));
+          // Enrich with plot in background
+          Promise.all(basic.map(m =>
+            fetch(`https://www.omdbapi.com/?i=${m.id}&apikey=${OMDB_KEY}`).then(r=>r.json()).catch(()=>null)
+          )).then(details => {
+            setDisplayed(prev => prev.map((m,i) => {
+              const d = details[i];
+              return d && d.Response==='True' ? {
+                ...m,
+                genre: d.Genre?.split(',')[0] || m.genre,
+                plot: d.Plot && d.Plot!=='N/A' ? d.Plot.slice(0,100)+(d.Plot.length>100?'…':'') : '',
+              } : m;
+            }));
+          });
         } else { setDisplayed([]); }
       } catch(e) { setDisplayed([]); }
       setLoading(false);
@@ -1188,6 +1214,7 @@ function MeliPlaySearchView({ onMovieAdded, onKbChange }) {
                   id:d.imdbID, title:d.Title, year:parseInt(d.Year)||0,
                   type:d.Type==='series'?'series':'movie',
                   genre:d.Genre?.split(',')[0]||'Drama', poster:d.Poster,
+                  plot: d.Plot && d.Plot!=='N/A' ? d.Plot.slice(0,100)+(d.Plot.length>100?'…':'') : '',
                 } : null).catch(()=>null)
             )
           );
@@ -1204,6 +1231,7 @@ function MeliPlaySearchView({ onMovieAdded, onKbChange }) {
           if (smartRes.Response==='True') out.push({
             id:smartRes.imdbID, title:smartRes.Title, year:parseInt(smartRes.Year)||0,
             type:'movie', genre:smartRes.Genre?.split(',')[0]||'Drama', poster:smartRes.Poster,
+            plot: smartRes.Plot && smartRes.Plot!=='N/A' ? smartRes.Plot.slice(0,100)+(smartRes.Plot.length>100?'…':'') : '',
             smartMatch:true,
           });
           if (regularRes.Response==='True') {
@@ -1216,16 +1244,48 @@ function MeliPlaySearchView({ onMovieAdded, onKbChange }) {
             });
           }
           setResults(out);
+          // Enrich ?s= fallback results (those without plot) in background
+          const toEnrich = out.filter(m => !m.plot);
+          if (toEnrich.length) {
+            Promise.all(toEnrich.map(m =>
+              fetch(`https://www.omdbapi.com/?i=${m.id}&apikey=${OMDB_KEY}`).then(r=>r.json()).catch(()=>null)
+            )).then(details => {
+              setResults(prev => prev.map(m => {
+                const d = details[toEnrich.findIndex(t=>t.id===m.id)];
+                return d && d.Response==='True' ? {
+                  ...m,
+                  genre: d.Genre?.split(',')[0] || m.genre,
+                  plot: d.Plot && d.Plot!=='N/A' ? d.Plot.slice(0,100)+(d.Plot.length>100?'…':'') : '',
+                } : m;
+              }));
+            });
+          }
 
         } else {
           // ── Regular OMDb title/keyword search ──
           const res  = await fetch(`https://www.omdbapi.com/?s=${encodeURIComponent(q)}&apikey=${OMDB_KEY}`);
           const data = await res.json();
-          setResults(data.Response==='True' ? data.Search.map(m => ({
-            id:m.imdbID, title:m.Title, year:parseInt(m.Year)||0,
-            type:m.Type==='series'?'series':'movie',
-            genre:m.Type==='series'?'Serie':'Película', poster:m.Poster,
-          })) : []);
+          if (data.Response==='True') {
+            const basic = data.Search.slice(0,6).map(m => ({
+              id:m.imdbID, title:m.Title, year:parseInt(m.Year)||0,
+              type:m.Type==='series'?'series':'movie',
+              genre:m.Type==='series'?'Serie':'Película', poster:m.Poster,
+            }));
+            setResults(basic);
+            // Enrich with plot in background
+            Promise.all(basic.map(m =>
+              fetch(`https://www.omdbapi.com/?i=${m.id}&apikey=${OMDB_KEY}`).then(r=>r.json()).catch(()=>null)
+            )).then(details => {
+              setResults(prev => prev.map((m,i) => {
+                const d = details[i];
+                return d && d.Response==='True' ? {
+                  ...m,
+                  genre: d.Genre?.split(',')[0] || m.genre,
+                  plot: d.Plot && d.Plot!=='N/A' ? d.Plot.slice(0,100)+(d.Plot.length>100?'…':'') : '',
+                } : m;
+              }));
+            });
+          } else { setResults([]); }
         }
         const term = q;
         setRecents(prev => [term, ...prev.filter(r=>r.toLowerCase()!==term.toLowerCase())].slice(0,5));
@@ -1713,17 +1773,24 @@ function FriendProfileScreen({ friend, movies, onBack }) {
 // ── MeliPlay app home screen ────────────────────────────────────────────────
 function MiPerfilView({ featured, loadingFt }) {
   const { ink } = useTheme();
-  const [perfilTab, setPerfilTab]   = useState('peliculas');
-  const [addedItems, setAddedItems] = useState({});
-  const [toast, setToast]           = useState(null);
-  const peliculas = featured.filter((_,i) => i%2===0);
-  const series    = featured.filter((_,i) => i%2!==0);
+  const [perfilTab, setPerfilTab]       = useState('peliculas');
+  const [deletingIds, setDeletingIds]   = useState({});
+  const [removedIds, setRemovedIds]     = useState({});
+  const [toast, setToast]               = useState(null);
+
+  const peliculas = featured.filter((_,i) => i%2===0).filter(m => !removedIds[m.id]);
+  const series    = featured.filter((_,i) => i%2!==0).filter(m => !removedIds[m.id]);
   const list      = perfilTab==='peliculas' ? peliculas : series;
-  const handleAdd = (m) => {
-    if (addedItems[m.id]) return;
-    setAddedItems(prev => ({...prev, [m.id]: true}));
-    setToast(m.title);
-    setTimeout(() => setToast(null), 2800);
+
+  const handleDelete = (m) => {
+    if (deletingIds[m.id]) return;
+    setDeletingIds(prev => ({...prev, [m.id]: true}));
+    setToast({title: m.title, type: 'removed'});
+    setTimeout(() => setToast(null), 2600);
+    setTimeout(() => {
+      setRemovedIds(prev => ({...prev, [m.id]: true}));
+      setDeletingIds(prev => { const n={...prev}; delete n[m.id]; return n; });
+    }, 350);
   };
   return (
     <div style={{display:'flex',flexDirection:'column',animation:'fadeUpIn .3s ease both'}}>
@@ -1773,12 +1840,76 @@ function MiPerfilView({ featured, loadingFt }) {
                 animation:`shimmerSweep 1.2s ease-in-out ${i*.15}s infinite`}}/>
             </div>
           ))
-        ) : list.length === 0 ? (
-          <div style={{fontFamily:'var(--sans)',fontSize:13,color:'var(--ink-sub)',textAlign:'center',marginTop:32}}>Sin contenido</div>
         ) : list.map((m,i) => (
           <ResultRow key={m.id} movie={m} delay={i*.06}
-            added={!!addedItems[m.id]} onPlusTap={() => handleAdd(m)}/>
+            deleting={!!deletingIds[m.id]}
+            actionSlot={
+              <div onClick={() => handleDelete(m)} style={{
+                width:28, height:28, borderRadius:14, flexShrink:0, cursor:'pointer',
+                background:'var(--add-bg)', boxShadow:'var(--add-sh)',
+                display:'flex', alignItems:'center', justifyContent:'center',
+                transition:'background .2s',
+              }}>
+                <svg width="13" height="14" viewBox="0 0 13 14" fill="none">
+                  <path d="M1 3.5h11M4.5 3.5V2.5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v1M5.5 6.5v4M7.5 6.5v4M2 3.5l.7 8a1 1 0 0 0 1 .9h5.6a1 1 0 0 0 1-.9l.7-8"
+                    stroke={ink} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+            }
+          />
         ))}
+        {list.length === 0 && !loadingFt && (
+          <div style={{
+            display:'flex',flexDirection:'column',alignItems:'center',
+            padding:'24px 24px 32px',textAlign:'center',
+            animation:'fadeUpIn .4s ease both',
+          }}>
+            {/* Icon */}
+            <div style={{
+              width:64,height:64,borderRadius:20,
+              background:'var(--ri-bg)',
+              display:'flex',alignItems:'center',justifyContent:'center',
+              marginBottom:20,
+            }}>
+              <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                <rect x="4" y="7" width="20" height="17" rx="3"
+                  stroke={TERRA} strokeWidth="1.8" fill="none"/>
+                <path d="M9 7V5.5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2V7"
+                  stroke={TERRA} strokeWidth="1.8" strokeLinecap="round"/>
+                <path d="M10 13h8M10 17h5"
+                  stroke={TERRA} strokeWidth="1.8" strokeLinecap="round"/>
+              </svg>
+            </div>
+            {/* Title */}
+            <div style={{
+              fontFamily:'var(--sans)',fontSize:17,fontWeight:700,
+              color:'var(--ink)',letterSpacing:'-.02em',lineHeight:1.25,
+              marginBottom:10,
+            }}>Todavía no guardaste nada</div>
+            {/* Subtitle */}
+            <div style={{
+              fontFamily:'var(--sans)',fontSize:13,color:'var(--ink-sub)',
+              lineHeight:1.6,marginBottom:28,maxWidth:260,
+            }}>
+              Cuando alguien te recomiende algo o encuentres un título que te llame la atención, vas a verlo acá.
+            </div>
+            {/* CTA */}
+            <button style={{
+              height:44,paddingLeft:24,paddingRight:24,borderRadius:22,
+              background:TERRA,border:'none',cursor:'pointer',
+              fontFamily:'var(--sans)',fontSize:14,fontWeight:600,color:'#fff',
+              letterSpacing:'-.01em',
+              boxShadow:'0 4px 16px rgba(200,82,42,.4)',
+              display:'flex',alignItems:'center',gap:8,
+            }}>
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <circle cx="6" cy="6" r="4.5" stroke="#fff" strokeWidth="1.6"/>
+                <path d="M9.5 9.5L13 13" stroke="#fff" strokeWidth="1.6" strokeLinecap="round"/>
+              </svg>
+              Buscar títulos
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Toast */}
@@ -1789,16 +1920,17 @@ function MiPerfilView({ featured, loadingFt }) {
             display:'flex',alignItems:'center',gap:12,
             boxShadow:'0 8px 32px rgba(0,0,0,.35),0 0 0 .5px rgba(255,255,255,.1)',
             backdropFilter:'blur(16px)',WebkitBackdropFilter:'blur(16px)'}}>
-            <div style={{width:32,height:32,borderRadius:8,background:TERRA,flexShrink:0,
+            <div style={{width:32,height:32,borderRadius:8,background:'#555',flexShrink:0,
               display:'flex',alignItems:'center',justifyContent:'center'}}>
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <path d="M2 7l3.5 3.5 6.5-6.5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <svg width="13" height="14" viewBox="0 0 13 14" fill="none">
+                <path d="M1 3.5h11M4.5 3.5V2.5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v1M5.5 6.5v4M7.5 6.5v4M2 3.5l.7 8a1 1 0 0 0 1 .9h5.6a1 1 0 0 0 1-.9l.7-8"
+                  stroke="#fff" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </div>
             <div style={{flex:1}}>
-              <div style={{fontFamily:'var(--sans)',fontSize:13,fontWeight:600,color:'#fff'}}>Añadido a tu lista ✓</div>
+              <div style={{fontFamily:'var(--sans)',fontSize:13,fontWeight:600,color:'#fff'}}>Eliminado de tu lista</div>
               <div style={{fontFamily:'var(--sans)',fontSize:11,color:'rgba(255,255,255,.65)',lineHeight:1.4,marginTop:1,
-                overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{toast}</div>
+                overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{toast?.title}</div>
             </div>
           </div>
         </div>
@@ -1835,6 +1967,7 @@ function MeliPlayAppScreen({ savedMovies=[], onBack, onMovieAdded }) {
           id:d.imdbID, title:d.Title, year:parseInt(d.Year)||0,
           genre:d.Genre?.split(',')[0]||'Drama',
           poster:d.Poster, rating:d.imdbRating,
+          plot: d.Plot && d.Plot!=='N/A' ? d.Plot.slice(0,100)+(d.Plot.length>100?'…':'') : '',
         } : null)
         .catch(() => null)
     )).then(res => { if (!cancelled) { setFeatured(res.filter(Boolean)); setLoadingFt(false); } });
@@ -1944,8 +2077,8 @@ function MeliPlayAppScreen({ savedMovies=[], onBack, onMovieAdded }) {
                       textShadow:'0 1px 4px rgba(0,0,0,.5)',
                       overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{m.title}</div>
                     <div style={{display:'flex',alignItems:'center',gap:6,flexWrap:'nowrap'}}>
-                      <div style={{padding:'2px 8px',borderRadius:4,background:TERRA,flexShrink:0,
-                        fontFamily:'var(--mono)',fontSize:9,fontWeight:700,color:'#fff',letterSpacing:'.02em'}}>
+                      <div style={{padding:'2px 8px',borderRadius:4,background:'rgba(255,255,255,0.92)',flexShrink:0,
+                        fontFamily:'var(--mono)',fontSize:9,fontWeight:700,color:'#0F0F0F',letterSpacing:'.02em'}}>
                         {match}% match
                       </div>
                       <div style={{display:'flex',alignItems:'center',gap:3,minWidth:0}}>
@@ -2002,12 +2135,12 @@ function MeliPlayAppScreen({ savedMovies=[], onBack, onMovieAdded }) {
           ) : (
             <div className="no-scrollbar" style={{display:'flex',gap:12,overflowX:'auto',padding:'0 20px 8px'}}>
               {[
-                {name:'Carlos', initials:'CA', status:'viendo',   mi:1},
+                {name:'Carlos', initials:'CA', status:'viendo',   mi:1, recommended:true},
                 {name:'Ana',    initials:'AN', status:'viendo',   mi:4},
-                {name:'Luis',   initials:'LU', status:'reviendo', mi:3},
+                {name:'Luis',   initials:'LU', status:'reviendo', mi:3, recommended:true},
                 {name:'María',  initials:'MA', status:'terminó',  mi:2},
                 {name:'Jorge',  initials:'JO', status:'terminó',  mi:0},
-              ].map((fr, i) => {
+              ].sort((a,b) => (b.recommended?1:0)-(a.recommended?1:0)).map((fr, i) => {
                 const movie = featured[fr.mi] || featured[0];
                 if (!movie) return null;
                 const isLive = fr.status === 'viendo';
@@ -2047,6 +2180,23 @@ function MeliPlayAppScreen({ savedMovies=[], onBack, onMovieAdded }) {
                         </div>
                       )}
                     </div>
+
+                    {/* Recomendado stripe — sits between poster and info */}
+                    {fr.recommended && (
+                      <div style={{
+                        background:TERRA,
+                        padding:'3px 9px',
+                        display:'flex',alignItems:'center',gap:4,
+                      }}>
+                        {/* paper-plane / send icon */}
+                        <svg width="8" height="8" viewBox="0 0 10 10" fill="none">
+                          <path d="M9 1L1 4.5l3.5 1L9 1zM4.5 5.5L6 9l3-8-4.5 4.5z"
+                            fill="#fff" fillRule="evenodd"/>
+                        </svg>
+                        <span style={{fontFamily:'var(--mono)',fontSize:7,fontWeight:700,
+                          color:'#fff',letterSpacing:'.04em',lineHeight:1}}>RECOMENDADO</span>
+                      </div>
+                    )}
 
                     {/* Friend info */}
                     <div style={{
