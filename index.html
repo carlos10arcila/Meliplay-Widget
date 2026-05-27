@@ -2296,7 +2296,7 @@ function MiPerfilView({ featured, loadingFt, onBuscar, onShareRequest }) {
   );
 }
 
-function MeliPlayAppScreen({ savedMovies=[], onBack, onMovieAdded }) {
+function MeliPlayAppScreen({ savedMovies=[], onBack, onMovieAdded, onToggleMode, isDarkMode=true }) {
   const { ink } = useTheme();
   const [closing, setClosing]         = useState(false);
   const [featured, setFeatured]       = useState([]);
@@ -2398,13 +2398,25 @@ function MeliPlayAppScreen({ savedMovies=[], onBack, onMovieAdded }) {
             <div style={{width:44,height:44,flexShrink:0}}/>
           )}
           <MeliMark size={19} dotColor={TERRA}/>
-          <div style={{width:44,height:44,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-              <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" stroke={ink} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"
-                stroke={ink} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </div>
+          <button onClick={onToggleMode} aria-label={isDarkMode ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+            style={{width:44,height:44,display:'flex',alignItems:'center',justifyContent:'center',
+              flexShrink:0,background:'none',border:'none',cursor:'pointer',borderRadius:8,padding:0,
+              transition:'opacity .2s'}}>
+            {isDarkMode ? (
+              /* Sun icon — shown in dark mode, click → go light */
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="4" stroke={ink} strokeWidth="1.7" strokeLinecap="round"/>
+                <path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"
+                  stroke={ink} strokeWidth="1.7" strokeLinecap="round"/>
+              </svg>
+            ) : (
+              /* Moon icon — shown in light mode, click → go dark */
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"
+                  stroke={ink} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            )}
+          </button>
         </div>
       </div>
 
@@ -3074,6 +3086,8 @@ function LiveDemo() {
                   savedMovies={savedMovies}
                   onBack={() => setState(prevStateRef.current)}
                   onMovieAdded={m => setSavedMovies(prev => prev.some(s=>s.id===m.id) ? prev : [...prev, m])}
+                  isDarkMode={mode==='dark'}
+                  onToggleMode={() => setMode(m => m==='dark' ? 'light' : 'dark')}
                 />
               )}
               {(state==='sheet'||state==='confirming') && (
@@ -3155,9 +3169,6 @@ function LiveDemo() {
             {STATE_LABELS[state]}
           </div>
         </div>
-
-        {/* panel */}
-        <StylePanel uiStyle={uiStyle} mode={mode} onStyle={handleStyle} onMode={handleMode}/>
 
       </div>
     </ThemeCtx.Provider>
