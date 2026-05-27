@@ -86,6 +86,11 @@
     @keyframes caretBlink {0%,49%{opacity:1}50%,100%{opacity:0}}
     .dark-search-input::placeholder{color:#8E8E93}
     .dark-search-input{color:#fff}
+    .swipeable-row{position:relative;overflow:hidden;border-radius:14px}
+    .swipe-actions{position:absolute;top:0;right:0;bottom:0;display:flex;align-items:stretch;transform:translateX(100%);transition:transform .28s cubic-bezier(.32,.72,0,1)}
+    .swipeable-row.swiped .swipe-actions{transform:translateX(0)}
+    .swipeable-row.swiped .swipe-content{transform:translateX(-148px)}
+    .swipe-content{transition:transform .28s cubic-bezier(.32,.72,0,1)}
   </style>
 </head>
 <body>
@@ -195,34 +200,34 @@ const ACTOR_ENTRIES = [
 ];
 
 const SEMANTIC_DB = [
-  { keys:['run','ran','running','ping pong','life is like','box of chocolates','mama always said'],   title:'Forrest Gump' },
-  { keys:['dream','layer','subconscious','totem','spinning top','dream within','limbo','extraction'],  title:'Inception' },
-  { keys:['wormhole','black hole','time dilation','relativity','saturn','tars','cooper','fifth dimension'], title:'Interstellar' },
-  { keys:['soap','fight club','tyler','durden','first rule','project mayhem','anarchy'],              title:'Fight Club' },
-  { keys:['joker','gotham','dark knight','batman','why so serious','pencil','harvey dent'],           title:'The Dark Knight' },
+  { keys:['run','ran','running','ping pong','life is like','box of chocolates','mama always said','correr','vida como una caja','mamá siempre decía','ping pong','guerra vietnam','alabama'], title:'Forrest Gump' },
+  { keys:['dream','layer','subconscious','totem','spinning top','dream within','limbo','extraction','sueño','sueños','capas','trompo','extracción','subconsciente','laberinto'], title:'Inception' },
+  { keys:['wormhole','black hole','time dilation','relativity','saturn','tars','cooper','fifth dimension','agujero negro','tiempo','gravedad','cooper','dimensión','espacio'], title:'Interstellar' },
+  { keys:['soap','fight club','tyler','durden','first rule','project mayhem','anarchy','pelea','sótano','pelea club','proyecto mayhem','jabón','anarquía'], title:'Fight Club' },
+  { keys:['joker','gotham','dark knight','batman','why so serious','pencil','harvey dent','guasón','ciudad','por qué tan serio','caballero oscuro'], title:'The Dark Knight' },
   { keys:['iron man','tony stark','billionaire','arc reactor','jarvis','genius'],                     title:'Iron Man' },
   { keys:['wizard','hogwarts','wand','magic school','sorting hat','voldemort','hermione','dumbledore'], title:'Harry Potter and the Sorcerer\'s Stone' },
-  { keys:['ring','shire','hobbit','frodo','mordor','gandalf','precious','bilbo','fellowship'],        title:'The Lord of the Rings: The Fellowship of the Ring' },
-  { keys:['dinosaur','park','island','dna','velociraptor','spared no expense','jurassic','amber'],    title:'Jurassic Park' },
-  { keys:['matrix','red pill','blue pill','simulation','neo','the one','morpheus','oracle'],          title:'The Matrix' },
+  { keys:['ring','shire','hobbit','frodo','mordor','gandalf','precious','bilbo','fellowship','anillo','hobbiton','elfo','enano','mago','montaña','minas tirith'], title:'The Lord of the Rings: The Fellowship of the Ring' },
+  { keys:['dinosaur','park','island','dna','velociraptor','spared no expense','jurassic','amber','dinosaurio','dinosaurios','isla','parque','adn','ámbar','raptor','genetica'], title:'Jurassic Park' },
+  { keys:['matrix','red pill','blue pill','simulation','neo','the one','morpheus','oracle','pastilla roja','pastilla azul','simulación','realidad virtual','máquinas','agente smith'], title:'The Matrix' },
   { keys:['frozen','elsa','let it go','snow queen','arendelle','olaf','ice castle'],                  title:'Frozen' },
-  { keys:['toy','cowboy','woody','buzz lightyear','infinity and beyond','andy','potato head'],        title:'Toy Story' },
+  { keys:['toy','cowboy','woody','buzz lightyear','infinity and beyond','andy','potato head','juguetes','vaquero','espacio','al infinito'], title:'Toy Story' },
   { keys:['lion','king','simba','hakuna matata','pride rock','mufasa','rafiki','circle of life'],     title:'The Lion King' },
-  { keys:['titanic','ship','iceberg','sink','jack','rose','never let go','king of the world'],        title:'Titanic' },
+  { keys:['titanic','ship','iceberg','sink','jack','rose','never let go','king of the world','barco','hundimiento','naufragio','amor barco','océano'], title:'Titanic' },
   { keys:['prison','shawshank','hope','redemption','zihuatanejo','warden','crawl through'],           title:'The Shawshank Redemption' },
-  { keys:['thanos','snap','infinity','end game','i am inevitable','i am iron man','gauntlet'],        title:'Avengers: Endgame' },
+  { keys:['thanos','snap','infinity','end game','i am inevitable','i am iron man','gauntlet','superhéroes','vengadores','infinito','chasquido','guantelete'], title:'Avengers: Endgame' },
   { keys:['alien','xenomorph','ripley','chest','face hugger','in space','no one can hear'],           title:'Alien' },
   { keys:['shark','beach','jaws','bigger boat','amity','chief brody','swim'],                         title:'Jaws' },
   { keys:['serial killer','silence','lamb','hannibal','lecter','fbi','clarice','chianti','liver'],    title:'The Silence of the Lambs' },
-  { keys:['death star','force','darth vader','luke','jedi','lightsaber','i am your father'],          title:'Star Wars: A New Hope' },
+  { keys:['death star','force','darth vader','luke','jedi','lightsaber','i am your father','fuerza','sable de luz','galaxia','yo soy tu padre','sith','nave'], title:'Star Wars: A New Hope' },
   { keys:['spider','peter parker','web','uncle ben','great power','great responsibility'],            title:'Spider-Man' },
-  { keys:['mafia','offer they can\'t refuse','vito','corleone','sicily','family','don','godfather'],  title:'The Godfather' },
+  { keys:['mafia','offer they can\'t refuse','vito','corleone','sicily','family','don','godfather','padrino','familia','oferta','sicilia','mafioso'], title:'The Godfather' },
   { keys:['scarface','cocaine','montana','say hello','miami','drug lord','cartel','cuban'],           title:'Scarface' },
   { keys:['blade runner','replicant','android','empathy test','tears in rain'],                       title:'Blade Runner' },
   { keys:['pirate','captain','caribbean','sparrow','black pearl','rum','davey jones','compass'],      title:'Pirates of the Caribbean: The Curse of the Black Pearl' },
   { keys:['office','michael scott','dwight','pam','jim','dunder mifflin','paper company','that\'s what she said'], title:'The Office' },
-  { keys:['breaking bad','walter white','heisenberg','meth','jesse','i am the danger'],               title:'Breaking Bad' },
-  { keys:['stranger things','demogorgon','upside down','eleven','hawkins','mind flayer'],             title:'Stranger Things' },
+  { keys:['breaking bad','walter white','heisenberg','meth','jesse','i am the danger','metanfetamina','química','yo soy el peligro','drogas','nuevo mexico'], title:'Breaking Bad' },
+  { keys:['stranger things','demogorgon','upside down','eleven','hawkins','mind flayer','dimensión paralela','poderes telekinesis','once','mundo al revés'], title:'Stranger Things' },
 ];
 
 // Bigram similarity for fuzzy name matching
@@ -266,6 +271,28 @@ function matchSemantic(query) {
     if (score > bestScore) { bestScore = score; best = { ...item, score }; }
   }
   return bestScore >= 1 ? best : null;
+}
+
+function partialSemanticFallback(query) {
+  const q = query.toLowerCase();
+  const words = q.split(/\s+/).filter(w => w.length > 3);
+  const matches = [];
+  for (const item of SEMANTIC_DB) {
+    const hit = item.keys.some(k => words.some(w => k.includes(w) || w.includes(k)));
+    if (hit && !matches.find(m => m.title === item.title)) matches.push(item);
+    if (matches.length >= 3) break;
+  }
+  return matches;
+}
+
+function formatContactsLabel(contacts) {
+  const n = contacts.length;
+  if (n === 0) return null;
+  const names = ['Ana', 'Carlos', 'Luis', 'María', 'Jorge'];
+  if (n === 1) return `${names[0]} lo vio`;
+  if (n === 2) return `${names[0]} y ${names[1]} lo vieron`;
+  const overflow = n - 2;
+  return `${names[0]}, ${names[1]} y ${overflow} más lo vieron`;
 }
 
 // ── Theme context ──────────────────────────────────────────────────────────
@@ -498,7 +525,7 @@ function Widget({ withBadge=false, shimmer=false, savedMovie=null, pressed=null,
         </div>
       )}
       <MeliMark size={18} dotColor={TERRA}/>
-      <div style={{fontFamily:'var(--serif)',fontSize:11.5,fontStyle:'italic',color:'var(--ink-sub)',marginTop:3}}>Tu cine, a mano</div>
+      <div style={{fontFamily:'var(--serif)',fontSize:13,fontStyle:'italic',color:'var(--ink-sub)',marginTop:3}}>Tu cine, a mano</div>
       <div style={{marginTop:18,display:'flex',flexDirection:'column',gap:9}}>
         <button type="button" onClick={() => onTap?.('buscar')} data-action="buscar" style={{
           width:'100%',height:44,borderRadius:12,background:TERRA,border:'none',cursor:'pointer',
@@ -519,12 +546,12 @@ function Widget({ withBadge=false, shimmer=false, savedMovie=null, pressed=null,
           boxShadow:'var(--btn-s-sh)',
         }}>
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <circle cx="11" cy="2.5" r="1.8" stroke={ink} strokeWidth="1.4"/>
-            <circle cx="11" cy="11.5" r="1.8" stroke={ink} strokeWidth="1.4"/>
-            <circle cx="3"  cy="7"   r="1.8" stroke={ink} strokeWidth="1.4"/>
-            <path d="M4.7 6.1L9.3 3.4M4.7 7.9L9.3 10.6" stroke={ink} strokeWidth="1.4" strokeLinecap="round"/>
+            <path d="M7 1v8M4 4l3-3 3 3" stroke="var(--ink)" strokeWidth="1.8"
+              strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M2 8v4h10V8" stroke="var(--ink)" strokeWidth="1.8"
+              strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
-          Compartir
+          Invita a familia y amigos
         </button>
       </div>
     </div>
@@ -619,7 +646,7 @@ function HomeScreen({ withBadge=false, shimmer=false, savedMovie=null, widgetPre
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                   <path d="M6 4.5L16 10L6 15.5V4.5Z" fill="white" fillOpacity=".95"/>
                 </svg>
-                <div style={{fontFamily:'var(--sans)',fontSize:7,fontWeight:700,color:'rgba(255,255,255,.85)',letterSpacing:'.02em',marginTop:1,lineHeight:1}}>MELI</div>
+                <div style={{fontFamily:'var(--sans)',fontSize:9,fontWeight:700,color:'rgba(255,255,255,.85)',letterSpacing:'.02em',marginTop:1,lineHeight:1}}>MELI</div>
               </div>
               <div style={{fontSize:10,color:'var(--icon-label)',fontFamily:'var(--sans)',textShadow:'0 1px 2px rgba(0,0,0,.3)'}}>MeliPlay</div>
             </div>
@@ -766,6 +793,93 @@ function ResultRow({ movie, delay=0, added, onPlusTap, actionSlot, deleting=fals
   );
 }
 
+// ── Swipeable row wrapper ──────────────────────────────────────────────────
+function SwipeableRow({ children, onShare, onDelete, hint=false }) {
+  const [swiped, setSwiped] = useState(false);
+  const startX  = useRef(null);
+  const rowRef  = useRef(null);
+  const hinted  = useRef(false);
+
+  useEffect(() => {
+    if (!hint) return;
+    if (hinted.current) return;
+    hinted.current = true;
+    const t1 = setTimeout(() => setSwiped(true),  600);
+    const t2 = setTimeout(() => setSwiped(false), 1400);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, [hint]);
+
+  const onTouchStart = e => { startX.current = e.touches[0].clientX; };
+  const onTouchEnd   = e => {
+    if (startX.current === null) return;
+    const dx = startX.current - e.changedTouches[0].clientX;
+    if (dx > 40)  setSwiped(true);
+    if (dx < -20) setSwiped(false);
+    startX.current = null;
+  };
+  const onMouseDown = e => { startX.current = e.clientX; };
+  const onMouseUp   = e => {
+    if (startX.current === null) return;
+    const dx = startX.current - e.clientX;
+    if (dx > 40)  setSwiped(true);
+    if (dx < -20) setSwiped(false);
+    startX.current = null;
+  };
+
+  return (
+    <div
+      ref={rowRef}
+      className={`swipeable-row${swiped ? ' swiped' : ''}`}
+      onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}
+      onMouseDown={onMouseDown}   onMouseUp={onMouseUp}
+    >
+      <div className="swipe-content">{children}</div>
+      <div className="swipe-actions">
+
+        {/* Share action — TERRA */}
+        <div
+          role="button" aria-label="Compartir título"
+          onClick={() => { setSwiped(false); onShare?.(); }}
+          style={{
+            width:74, display:'flex', flexDirection:'column',
+            alignItems:'center', justifyContent:'center', gap:5,
+            background:TERRA, cursor:'pointer',
+          }}>
+          <svg width="16" height="16" viewBox="0 0 14 14" fill="none">
+            <path d="M7 1v8M4 4l3-3 3 3" stroke="#fff" strokeWidth="1.8"
+              strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M2 8v4h10V8" stroke="#fff" strokeWidth="1.8"
+              strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+          <span style={{fontFamily:'var(--sans)',fontSize:10,fontWeight:600,
+            color:'#fff',letterSpacing:'.02em'}}>Compartir</span>
+        </div>
+
+        {/* Delete action — only shown when onDelete provided */}
+        {onDelete && (
+          <div
+            role="button" aria-label="Eliminar de mi lista"
+            onClick={() => { setSwiped(false); onDelete(); }}
+            style={{
+              width:74, display:'flex', flexDirection:'column',
+              alignItems:'center', justifyContent:'center', gap:5,
+              background:'#E24B4A', cursor:'pointer',
+              borderTopRightRadius:14, borderBottomRightRadius:14,
+            }}>
+            <svg width="14" height="14" viewBox="0 0 13 14" fill="none">
+              <path d="M1 3.5h11M4.5 3.5V2.5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v1M5.5 6.5v4M7.5 6.5v4M2 3.5l.7 8a1 1 0 0 0 1 .9h5.6a1 1 0 0 0 1-.9l.7-8"
+                stroke="#fff" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            <span style={{fontFamily:'var(--sans)',fontSize:10,fontWeight:600,
+              color:'#fff',letterSpacing:'.02em'}}>Eliminar</span>
+          </div>
+        )}
+
+      </div>
+    </div>
+  );
+}
+
 // ── Confirmation banner ────────────────────────────────────────────────────
 function ConfirmationBanner({ movie, animate=true, onHidden }) {
   const [out, setOut]       = useState(false);
@@ -799,6 +913,51 @@ function ConfirmationBanner({ movie, animate=true, onHidden }) {
           </svg>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ── Empty search state ─────────────────────────────────────────────────────
+function EmptySearchState({ query, featured = [] }) {
+  const fallbacks = partialSemanticFallback(query);
+  const suggestions = fallbacks.length >= 2 ? fallbacks : featured.slice(0, 3);
+  return (
+    <div style={{marginTop: 24}}>
+      <div style={{
+        display:'flex', alignItems:'flex-start', gap:10,
+        padding:'12px 14px', marginBottom:16,
+        background:'var(--ri-bg)', borderRadius:12,
+        animation:'fadeUpIn .3s cubic-bezier(.34,1.56,.64,1) both',
+      }}>
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{flexShrink:0, marginTop:1}}>
+          <circle cx="8" cy="8" r="7" stroke={TERRA} strokeWidth="1.5"/>
+          <path d="M8 5v3.5M8 10.5v.5" stroke={TERRA} strokeWidth="1.8" strokeLinecap="round"/>
+        </svg>
+        <div>
+          <div style={{fontFamily:'var(--sans)',fontSize:13,fontWeight:600,color:'var(--ink)',marginBottom:2}}>
+            No hallamos una coincidencia exacta.
+          </div>
+          <div style={{fontFamily:'var(--sans)',fontSize:12,color:'var(--ink-sub)',lineHeight:1.5}}>
+            Esto es lo más cercano a lo que buscás.
+          </div>
+        </div>
+      </div>
+      {suggestions.length > 0 && (
+        <div style={{display:'flex',flexDirection:'column',gap:8}}>
+          {suggestions.map((item, i) => {
+            const movie = {
+              id: item.title?.replace(/\s/g,'_') || String(i),
+              title: item.title || 'Título relacionado',
+              genre: 'Película',
+              type: 'movie',
+              poster: 'N/A',
+            };
+            return (
+              <ResultRow key={i} movie={movie} delay={i * .07} added={false} onPlusTap={() => {}}/>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
@@ -837,6 +996,11 @@ function SearchSheetInteractive({ onResultTap, onDismiss }) {
   const [closing, setClosing]            = useState(false);
   const [recents, setRecents]            = useState(['Harry Potter','Forrest Gump','Tony Stark','Steve Carell']);
   const [kbVisible, setKbVisible]        = useState(true);
+  const [searchType, setSearchType]      = useState(null); // 'actor' | 'semantic' | null
+  const [actorName, setActorName]        = useState(null);
+  const [shareMovie, setShareMovie]      = useState(null);
+  const [showShareSheet, setShowShareSheet] = useState(false);
+  const [shareToast, setShareToast]      = useState(null);
   const inputRef  = useRef(null);
   const debouncer = useRef(null);
 
@@ -846,37 +1010,81 @@ function SearchSheetInteractive({ onResultTap, onDismiss }) {
 
   const handleQueryChange = val => {
     setQuery(val);
+    setSearchType(null); setActorName(null);
     clearTimeout(debouncer.current);
     if (!val) { setLoading(false); setDisplayed([]); return; }
     setLoading(true); setDisplayed([]);
     debouncer.current = setTimeout(async () => {
-      if (val.trim().length < 2) { setDisplayed([]); setLoading(false); return; }
+      const q = val.trim();
+      if (q.length < 2) { setDisplayed([]); setLoading(false); return; }
       try {
-        const res  = await fetch(`https://www.omdbapi.com/?s=${encodeURIComponent(val.trim())}&apikey=${OMDB_KEY}`);
-        const data = await res.json();
-        if (data.Response === 'True') {
-          const basic = data.Search.slice(0,6).map(m => ({
-            id:m.imdbID, title:m.Title, year:parseInt(m.Year)||0,
-            type:m.Type==='series'?'series':'movie',
-            genre:m.Type==='series'?'Serie':'Película', poster:m.Poster,
-          }));
-          setDisplayed(basic);
-          const term = val.trim();
-          setRecents(prev => [term, ...prev.filter(r => r.toLowerCase() !== term.toLowerCase())].slice(0, 5));
-          // Enrich with plot in background
-          Promise.all(basic.map(m =>
-            fetch(`https://www.omdbapi.com/?i=${m.id}&apikey=${OMDB_KEY}`).then(r=>r.json()).catch(()=>null)
-          )).then(details => {
-            setDisplayed(prev => prev.map((m,i) => {
-              const d = details[i];
-              return d && d.Response==='True' ? {
-                ...m,
-                genre: d.Genre?.split(',')[0] || m.genre,
-                plot: d.Plot && d.Plot!=='N/A' ? d.Plot.slice(0,100)+(d.Plot.length>100?'…':'') : '',
-              } : m;
-            }));
+        const actor    = matchActor(q);
+        const semantic = !actor ? matchSemantic(q) : null;
+        if (actor) {
+          setActorName(actor.actor); setSearchType('actor');
+          const fetched = await Promise.all(
+            actor.movies.slice(0,6).map(t =>
+              fetch(`https://www.omdbapi.com/?t=${encodeURIComponent(t)}&apikey=${OMDB_KEY}`)
+                .then(r=>r.json())
+                .then(d => d.Response==='True' ? {
+                  id:d.imdbID, title:d.Title, year:parseInt(d.Year)||0,
+                  type:d.Type==='series'?'series':'movie',
+                  genre:d.Genre?.split(',')[0]||'Drama', poster:d.Poster,
+                  plot: d.Plot && d.Plot!=='N/A' ? d.Plot.slice(0,100)+(d.Plot.length>100?'…':'') : '',
+                } : null).catch(()=>null)
+            )
+          );
+          setDisplayed(fetched.filter(Boolean));
+        } else if (semantic) {
+          setSearchType('semantic');
+          const [smartRes, regularRes] = await Promise.all([
+            fetch(`https://www.omdbapi.com/?t=${encodeURIComponent(semantic.title)}&apikey=${OMDB_KEY}`).then(r=>r.json()),
+            fetch(`https://www.omdbapi.com/?s=${encodeURIComponent(q)}&apikey=${OMDB_KEY}`).then(r=>r.json()),
+          ]);
+          const out = [];
+          if (smartRes.Response==='True') out.push({
+            id:smartRes.imdbID, title:smartRes.Title, year:parseInt(smartRes.Year)||0,
+            type:smartRes.Type==='series'?'series':'movie',
+            genre:smartRes.Genre?.split(',')[0]||'Drama', poster:smartRes.Poster,
+            plot: smartRes.Plot && smartRes.Plot!=='N/A' ? smartRes.Plot.slice(0,100)+(smartRes.Plot.length>100?'…':'') : '',
+            smartMatch: true,
           });
-        } else { setDisplayed([]); }
+          if (regularRes.Response==='True') {
+            regularRes.Search.slice(0,5).forEach(m => {
+              if (!out.find(x => x.id===m.imdbID)) out.push({
+                id:m.imdbID, title:m.Title, year:parseInt(m.Year)||0,
+                type:m.Type==='series'?'series':'movie',
+                genre:m.Type==='series'?'Serie':'Película', poster:m.Poster,
+              });
+            });
+          }
+          setDisplayed(out);
+        } else {
+          const res  = await fetch(`https://www.omdbapi.com/?s=${encodeURIComponent(q)}&apikey=${OMDB_KEY}`);
+          const data = await res.json();
+          if (data.Response === 'True') {
+            const basic = data.Search.slice(0,6).map(m => ({
+              id:m.imdbID, title:m.Title, year:parseInt(m.Year)||0,
+              type:m.Type==='series'?'series':'movie',
+              genre:m.Type==='series'?'Serie':'Película', poster:m.Poster,
+            }));
+            setDisplayed(basic);
+            const term = q;
+            setRecents(prev => [term, ...prev.filter(r => r.toLowerCase() !== term.toLowerCase())].slice(0, 5));
+            Promise.all(basic.map(m =>
+              fetch(`https://www.omdbapi.com/?i=${m.id}&apikey=${OMDB_KEY}`).then(r=>r.json()).catch(()=>null)
+            )).then(details => {
+              setDisplayed(prev => prev.map((m,i) => {
+                const d = details[i];
+                return d && d.Response==='True' ? {
+                  ...m,
+                  genre: d.Genre?.split(',')[0] || m.genre,
+                  plot: d.Plot && d.Plot!=='N/A' ? d.Plot.slice(0,100)+(d.Plot.length>100?'…':'') : '',
+                } : m;
+              }));
+            });
+          } else { setDisplayed([]); }
+        }
       } catch(e) { setDisplayed([]); }
       setLoading(false);
     }, 700);
@@ -977,29 +1185,98 @@ function SearchSheetInteractive({ onResultTap, onDismiss }) {
             {[0,1,2].map(i => <SkeletonRow key={i} delay={i*.06}/>)}
           </div>
         )}
-        {!loading && query && (() => {
-          if (!displayedResults.length)
-            return <div style={{fontFamily:'var(--sans)',fontSize:14,color:'var(--ink-sub)',textAlign:'center',marginTop:40}}>Sin resultados</div>;
-          const films  = displayedResults.filter(m => m.type !== 'series');
-          const series = displayedResults.filter(m => m.type === 'series');
-          const mixed  = films.length > 0 && series.length > 0;
-          const renderRows = (items, offset=0) => items.map((m,i) => (
-            <ResultRow key={m.id} movie={m} delay={(offset+i)*.05}
-              added={addedIds.has(m.id)}
-              onPlusTap={() => handlePlusTap(m)}/>
-          ));
-          return mixed ? (
-            <div style={{display:'flex',flexDirection:'column'}}>
-              <SectionLabel label="Películas"/>
-              <div style={{display:'flex',flexDirection:'column',gap:10,marginBottom:12}}>{renderRows(films,0)}</div>
-              <div style={{height:1,background:'var(--divider)',margin:'4px 8px 12px'}}/>
-              <SectionLabel label="Series"/>
-              <div style={{display:'flex',flexDirection:'column',gap:10}}>{renderRows(series,films.length)}</div>
-            </div>
-          ) : (
-            <div style={{display:'flex',flexDirection:'column',gap:10}}>{renderRows(displayedResults)}</div>
-          );
-        })()}
+        {!loading && query && (
+          displayedResults.length === 0
+            ? <EmptySearchState query={query} featured={[]} />
+            : <>
+                {/* Actor context banner */}
+                {searchType==='actor' && actorName && (
+                  <div style={{display:'flex',alignItems:'center',gap:7,marginBottom:12,marginTop:4,
+                    padding:'8px 12px',borderRadius:10,background:'rgba(212,87,46,.08)',
+                    animation:'fadeUpIn .3s cubic-bezier(.34,1.56,.64,1) both'}}>
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                      <circle cx="8" cy="5" r="3.2" stroke={TERRA} strokeWidth="1.5"/>
+                      <path d="M2 15c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke={TERRA} strokeWidth="1.5" strokeLinecap="round"/>
+                    </svg>
+                    <div style={{flex:1,minWidth:0}}>
+                      <span style={{fontFamily:'var(--sans)',fontSize:10,fontWeight:700,
+                        color:TERRA,letterSpacing:'.06em',textTransform:'uppercase'}}>Películas y series</span>
+                      <div style={{fontFamily:'var(--sans)',fontSize:13,fontWeight:600,
+                        color:'var(--ink)',textTransform:'capitalize',letterSpacing:'-.01em',
+                        overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{actorName}</div>
+                    </div>
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                      <path d="M3 7h8M7 3l4 4-4 4" stroke={TERRA} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </div>
+                )}
+                {/* Semantic smart match badge */}
+                {searchType==='semantic' && displayedResults[0]?.smartMatch && (
+                  <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:10,marginTop:4,
+                    animation:'fadeUpIn .3s cubic-bezier(.34,1.56,.64,1) both'}}>
+                    <div style={{padding:'4px 10px',borderRadius:20,
+                      background:'rgba(212,87,46,.1)',
+                      display:'flex',alignItems:'center',gap:5,border:'1px solid rgba(212,87,46,.2)'}}>
+                      <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
+                        <path d="M6 1l1.3 3.7H11L8.2 7l1 3.4L6 8.5 2.8 10.4l1-3.4L1 4.7h3.7z"
+                          fill={TERRA} stroke={TERRA} strokeWidth=".5"/>
+                      </svg>
+                      <span style={{fontFamily:'var(--sans)',fontSize:11,fontWeight:600,
+                        color:TERRA,letterSpacing:'.02em'}}>Búsqueda inteligente</span>
+                    </div>
+                  </div>
+                )}
+                {/* Result rows */}
+                {searchType==='actor' ? (() => {
+                  const films  = displayedResults.filter(m => m.type !== 'series');
+                  const series = displayedResults.filter(m => m.type === 'series');
+                  const rows = (items, offset) => items.map((m,i) => (
+                    <SwipeableRow key={m.id} hint={offset+i===0} onShare={() => { setShareMovie(m); setShowShareSheet(true); }} onDelete={null}>
+                      <ResultRow movie={m} delay={(offset+i)*.05}
+                        added={addedIds.has(m.id)} onPlusTap={() => handlePlusTap(m)}/>
+                    </SwipeableRow>
+                  ));
+                  return (
+                    <div style={{display:'flex',flexDirection:'column'}}>
+                      {films.length > 0 && <>
+                        <SectionLabel label="Películas"/>
+                        <div style={{display:'flex',flexDirection:'column',gap:8,marginBottom:series.length?14:0}}>
+                          {rows(films, 0)}
+                        </div>
+                      </>}
+                      {series.length > 0 && <>
+                        {films.length > 0 && <div style={{height:1,background:'var(--divider)',margin:'4px 8px 12px'}}/>}
+                        <SectionLabel label="Series"/>
+                        <div style={{display:'flex',flexDirection:'column',gap:8}}>
+                          {rows(series, films.length)}
+                        </div>
+                      </>}
+                    </div>
+                  );
+                })() : (() => {
+                  const films  = displayedResults.filter(m => m.type !== 'series');
+                  const series = displayedResults.filter(m => m.type === 'series');
+                  const mixed  = films.length > 0 && series.length > 0;
+                  const renderRows = (items, offset=0) => items.map((m,i) => (
+                    <SwipeableRow key={m.id} hint={offset+i===0} onShare={() => { setShareMovie(m); setShowShareSheet(true); }} onDelete={null}>
+                      <ResultRow movie={m} delay={(offset+i)*.05}
+                        added={addedIds.has(m.id)} onPlusTap={() => handlePlusTap(m)}/>
+                    </SwipeableRow>
+                  ));
+                  return mixed ? (
+                    <div style={{display:'flex',flexDirection:'column'}}>
+                      <SectionLabel label="Películas"/>
+                      <div style={{display:'flex',flexDirection:'column',gap:8,marginBottom:12}}>{renderRows(films,0)}</div>
+                      <div style={{height:1,background:'var(--divider)',margin:'4px 8px 12px'}}/>
+                      <SectionLabel label="Series"/>
+                      <div style={{display:'flex',flexDirection:'column',gap:8}}>{renderRows(series,films.length)}</div>
+                    </div>
+                  ) : (
+                    <div style={{display:'flex',flexDirection:'column',gap:8}}>{renderRows(displayedResults)}</div>
+                  );
+                })()}
+              </>
+        )}
       </div>
 
       {/* ── Search bar — sits right above keyboard ── */}
@@ -1024,7 +1301,7 @@ function SearchSheetInteractive({ onResultTap, onDismiss }) {
             value={query}
             onChange={e => handleQueryChange(e.target.value)}
             onFocus={() => setKbVisible(true)}
-            placeholder="Películas, series, actores…"
+            placeholder="Título, actor, escena o descripción…"
             style={{
               flex:1, border:'none', background:'transparent', outline:'none',
               fontFamily:'var(--sans)', fontSize:15, color:'var(--ink)',
@@ -1104,6 +1381,41 @@ function SearchSheetInteractive({ onResultTap, onDismiss }) {
           ))}
         </div>
       </div>
+
+      {/* Share sheet */}
+      {showShareSheet && (
+        <IOSShareSheet
+          movie={shareMovie}
+          onDismiss={msg => {
+            setShowShareSheet(false);
+            setShareMovie(null);
+            if (msg) {
+              setShareToast(msg);
+              setTimeout(() => setShareToast(null), 3000);
+            }
+          }}
+        />
+      )}
+
+      {/* Share toast */}
+      {shareToast && (
+        <div style={{position:'absolute',top:16,left:16,right:16,zIndex:310,
+          animation:'slideUpFade .38s cubic-bezier(.34,1.56,.64,1) both',pointerEvents:'none'}}>
+          <div style={{background:'rgba(22,18,14,.93)',borderRadius:16,padding:'12px 16px',
+            display:'flex',alignItems:'center',gap:10,
+            boxShadow:'0 8px 32px rgba(0,0,0,.35),0 0 0 .5px rgba(255,255,255,.1)',
+            backdropFilter:'blur(16px)',WebkitBackdropFilter:'blur(16px)'}}>
+            <div style={{width:28,height:28,borderRadius:8,background:TERRA,flexShrink:0,
+              display:'flex',alignItems:'center',justifyContent:'center'}}>
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <path d="M2 6l3 3 5-5" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+            <span style={{fontFamily:'var(--sans)',fontSize:12,color:'#F5F0E8',lineHeight:1.4}}>{shareToast}</span>
+          </div>
+        </div>
+      )}
+
       </div>
     </div>
   );
@@ -1178,6 +1490,9 @@ function MeliPlaySearchView({ onMovieAdded, onKbChange }) {
   const [searchType, setSearchType] = useState(null); // 'actor' | 'semantic' | null
   const [actorName, setActorName]   = useState(null);
   const [kbVisible, setKbVisible]   = useState(true);
+  const [shareMovie, setShareMovie]    = useState(null);
+  const [showShareSheet, setShowShareSheet] = useState(false);
+  const [shareToast, setShareToast]    = useState(null);
   const debouncer = useRef(null);
   const inputRef  = useRef(null);
 
@@ -1365,7 +1680,7 @@ function MeliPlaySearchView({ onMovieAdded, onKbChange }) {
         )}
         {!loading && query && (
           results.length === 0
-            ? <div style={{fontFamily:'var(--sans)',fontSize:14,color:'var(--ink-sub)',textAlign:'center',marginTop:32}}>Sin resultados</div>
+            ? <EmptySearchState query={query} featured={[]} />
             : <>
                 {/* Actor context banner */}
                 {searchType==='actor' && actorName && (
@@ -1411,9 +1726,11 @@ function MeliPlaySearchView({ onMovieAdded, onKbChange }) {
                   const films  = results.filter(m => m.type !== 'series');
                   const series = results.filter(m => m.type === 'series');
                   const rows = (items, offset) => items.map((m,i) => (
-                    <ResultRow key={m.id} movie={m} delay={(offset+i)*.04}
-                      added={addedIds.has(m.id)}
-                      onPlusTap={() => handlePlusTap(m)}/>
+                    <SwipeableRow key={m.id} hint={offset+i===0} onShare={() => { setShareMovie(m); setShowShareSheet(true); }} onDelete={null}>
+                      <ResultRow movie={m} delay={(offset+i)*.04}
+                        added={addedIds.has(m.id)}
+                        onPlusTap={() => handlePlusTap(m)}/>
+                    </SwipeableRow>
                   ));
                   return (
                     <div style={{display:'flex',flexDirection:'column'}}>
@@ -1435,9 +1752,11 @@ function MeliPlaySearchView({ onMovieAdded, onKbChange }) {
                 })() : (
                   <div style={{display:'flex',flexDirection:'column',gap:8}}>
                     {results.map((m,i) => (
-                      <ResultRow key={m.id} movie={m} delay={i*.04}
-                        added={addedIds.has(m.id)}
-                        onPlusTap={() => handlePlusTap(m)}/>
+                      <SwipeableRow key={m.id} hint={i===0} onShare={() => { setShareMovie(m); setShowShareSheet(true); }} onDelete={null}>
+                        <ResultRow movie={m} delay={i*.04}
+                          added={addedIds.has(m.id)}
+                          onPlusTap={() => handlePlusTap(m)}/>
+                      </SwipeableRow>
                     ))}
                   </div>
                 )}
@@ -1467,7 +1786,7 @@ function MeliPlaySearchView({ onMovieAdded, onKbChange }) {
             value={query}
             onChange={e => handleQueryChange(e.target.value)}
             onFocus={() => setKbVis(true)}
-            placeholder="Buscar películas, series…"
+            placeholder="Título, actor, escena o descripción…"
             style={{
               flex:1, border:'none', background:'transparent', outline:'none',
               fontFamily:'var(--sans)', fontSize:15, color:'var(--ink)',
@@ -1564,6 +1883,41 @@ function MeliPlaySearchView({ onMovieAdded, onKbChange }) {
           </div>
         ))}
       </div>
+
+      {/* Share sheet */}
+      {showShareSheet && (
+        <IOSShareSheet
+          movie={shareMovie}
+          onDismiss={msg => {
+            setShowShareSheet(false);
+            setShareMovie(null);
+            if (msg) {
+              setShareToast(msg);
+              setTimeout(() => setShareToast(null), 3000);
+            }
+          }}
+        />
+      )}
+
+      {/* Share toast */}
+      {shareToast && (
+        <div style={{position:'absolute',top:16,left:16,right:16,zIndex:310,
+          animation:'slideUpFade .38s cubic-bezier(.34,1.56,.64,1) both',pointerEvents:'none'}}>
+          <div style={{background:'rgba(22,18,14,.93)',borderRadius:16,padding:'12px 16px',
+            display:'flex',alignItems:'center',gap:10,
+            boxShadow:'0 8px 32px rgba(0,0,0,.35),0 0 0 .5px rgba(255,255,255,.1)',
+            backdropFilter:'blur(16px)',WebkitBackdropFilter:'blur(16px)'}}>
+            <div style={{width:28,height:28,borderRadius:8,background:TERRA,flexShrink:0,
+              display:'flex',alignItems:'center',justifyContent:'center'}}>
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <path d="M2 6l3 3 5-5" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+            <span style={{fontFamily:'var(--sans)',fontSize:12,color:'#F5F0E8',lineHeight:1.4}}>{shareToast}</span>
+          </div>
+        </div>
+      )}
+
       </div>
     </div>
   );
@@ -1591,7 +1945,7 @@ function HeroCard({ movie }) {
           {movie.rating && movie.rating !== 'N/A' && (
             <>
               <span style={{width:3,height:3,borderRadius:'50%',background:'rgba(255,255,255,.35)',flexShrink:0}}/>
-              <span style={{fontFamily:'var(--mono)',fontSize:11,color:'#FFD93D'}}>★ {movie.rating}</span>
+              <span style={{fontFamily:'var(--mono)',fontSize:11,color:'#F5C842'}}>★ {movie.rating}</span>
             </>
           )}
         </div>
@@ -1604,19 +1958,23 @@ function HeroCard({ movie }) {
 }
 
 // ── Friend profile screen ────────────────────────────────────────────────────
-function FriendProfileScreen({ friend, movies, onBack }) {
+function FriendProfileScreen({ friend, movies, onBack, forceClose=false }) {
   const { ink } = useTheme();
   const [tab, setTab]         = useState('peliculas');
   const [closing, setClosing] = useState(false);
   const [added, setAdded]     = useState(false);
   const [addedItems, setAddedItems] = useState({});
-  const [toast, setToast]     = useState(null);
+  const [toastMovie, setToastMovie] = useState(null);
+
+  useEffect(() => {
+    if (forceClose) setClosing(true);
+  }, [forceClose]);
 
   const handleAddItem = (m) => {
     if (addedItems[m.id]) return;
     setAddedItems(prev => ({...prev, [m.id]: true}));
-    setToast(m.title);
-    setTimeout(() => setToast(null), 2800);
+    setToastMovie(m);
+    setTimeout(() => setToastMovie(null), 2800);
   };
 
   const handleBack = () => { setClosing(true); setTimeout(onBack, 360); };
@@ -1672,6 +2030,25 @@ function FriendProfileScreen({ friend, movies, onBack }) {
             )}
             <div style={{position:'absolute',inset:0,
               background:'linear-gradient(to bottom,rgba(0,0,0,.04) 25%,rgba(0,0,0,.84))'}}/>
+
+            {/* VIENDO pill — shown when friend is actively watching */}
+            {friend.status === 'viendo' && (
+              <div style={{
+                position:'absolute', top:12, left:12,
+                display:'flex', alignItems:'center', gap:4,
+                padding:'3px 8px', borderRadius:10,
+                background:'#16A34A',
+                backdropFilter:'blur(4px)',
+              }}>
+                <span style={{width:6,height:6,borderRadius:'50%',background:'#fff',
+                  display:'inline-block',flexShrink:0,
+                  boxShadow:'0 0 0 0 rgba(255,255,255,.6)',
+                  animation:'ringPing 1.4s ease-out infinite'}}/>
+                <span style={{fontFamily:'var(--mono)',fontSize:9,fontWeight:700,
+                  color:'#fff',letterSpacing:'.04em'}}>VIENDO</span>
+              </div>
+            )}
+
             <div style={{position:'absolute',bottom:0,left:0,right:0,padding:'12px 14px 16px'}}>
               <div style={{fontFamily:'var(--sans)',fontSize:15,fontWeight:700,color:'#fff',
                 letterSpacing:'-.02em',marginBottom:10,lineHeight:1.2}}>
@@ -1679,7 +2056,13 @@ function FriendProfileScreen({ friend, movies, onBack }) {
               </div>
               <div style={{display:'flex',gap:8,alignItems:'center'}}>
                 {/* + add button */}
-                <button onClick={() => setAdded(a => !a)} style={{
+                <button onClick={() => {
+                  if (!added) {
+                    setAdded(true);
+                    setToastMovie(lastWatched);
+                    setTimeout(() => setToastMovie(null), 2800);
+                  }
+                }} style={{
                   width:44,height:44,borderRadius:'50%',flexShrink:0,cursor:'pointer',
                   border:'1.5px solid rgba(255,255,255,.55)',
                   background: added ? TERRA : 'rgba(255,255,255,.15)',
@@ -1740,38 +2123,15 @@ function FriendProfileScreen({ friend, movies, onBack }) {
       </div>
 
       {/* Toast */}
-      {toast && (
-        <div style={{
-          position:'absolute',top:80,left:16,right:16,zIndex:30,
-          animation:'slideUpFade .38s cubic-bezier(.34,1.56,.64,1) both',
-          pointerEvents:'none',
-        }}>
-          <div style={{
-            background:'rgba(22,18,14,.93)',borderRadius:16,padding:'13px 16px',
-            display:'flex',alignItems:'center',gap:12,
-            boxShadow:'0 8px 32px rgba(0,0,0,.35),0 0 0 .5px rgba(255,255,255,.1)',
-            backdropFilter:'blur(16px)',WebkitBackdropFilter:'blur(16px)',
-          }}>
-            <div style={{width:32,height:32,borderRadius:8,background:TERRA,flexShrink:0,
-              display:'flex',alignItems:'center',justifyContent:'center'}}>
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <path d="M2 7l3.5 3.5 6.5-6.5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
-            <div style={{flex:1}}>
-              <div style={{fontFamily:'var(--sans)',fontSize:13,fontWeight:600,color:'#fff'}}>Añadido a tu lista ✓</div>
-              <div style={{fontFamily:'var(--sans)',fontSize:11,color:'rgba(255,255,255,.82)',lineHeight:1.4,marginTop:1,
-                overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{toast}</div>
-            </div>
-          </div>
-        </div>
+      {toastMovie && (
+        <ConfirmationBanner movie={toastMovie} animate onHidden={() => setToastMovie(null)}/>
       )}
     </div>
   );
 }
 
 // ── MeliPlay app home screen ────────────────────────────────────────────────
-function MiPerfilView({ featured, loadingFt }) {
+function MiPerfilView({ featured, loadingFt, onBuscar, onShareRequest }) {
   const { ink } = useTheme();
   const [perfilTab, setPerfilTab]       = useState('peliculas');
   const [deletingIds, setDeletingIds]   = useState({});
@@ -1841,22 +2201,19 @@ function MiPerfilView({ featured, loadingFt }) {
             </div>
           ))
         ) : list.map((m,i) => (
-          <ResultRow key={m.id} movie={m} delay={i*.06}
-            deleting={!!deletingIds[m.id]}
-            actionSlot={
-              <div onClick={() => handleDelete(m)} role="button" aria-label="Eliminar de mi lista" style={{
-                width:36, height:36, borderRadius:18, flexShrink:0, cursor:'pointer',
-                background:'var(--add-bg)', boxShadow:'var(--add-sh)',
-                display:'flex', alignItems:'center', justifyContent:'center',
-                transition:'background .2s',
-              }}>
-                <svg width="13" height="14" viewBox="0 0 13 14" fill="none">
-                  <path d="M1 3.5h11M4.5 3.5V2.5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v1M5.5 6.5v4M7.5 6.5v4M2 3.5l.7 8a1 1 0 0 0 1 .9h5.6a1 1 0 0 0 1-.9l.7-8"
-                    stroke={ink} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </div>
-            }
-          />
+          <SwipeableRow
+            key={m.id}
+            hint={i === 0}
+            onShare={() => onShareRequest?.(m)}
+            onDelete={() => handleDelete(m)}
+          >
+            <ResultRow
+              movie={m}
+              delay={i*.06}
+              deleting={!!deletingIds[m.id]}
+              actionSlot={null}
+            />
+          </SwipeableRow>
         ))}
         {list.length === 0 && !loadingFt && (
           <div style={{
@@ -1894,7 +2251,7 @@ function MiPerfilView({ featured, loadingFt }) {
               Cuando alguien te recomiende algo o encuentres un título que te llame la atención, vas a verlo acá.
             </div>
             {/* CTA */}
-            <button style={{
+            <button onClick={() => onBuscar?.()} style={{
               height:44,paddingLeft:24,paddingRight:24,borderRadius:22,
               background:TERRA,border:'none',cursor:'pointer',
               fontFamily:'var(--sans)',fontSize:14,fontWeight:600,color:'#fff',
@@ -1948,15 +2305,28 @@ function MeliPlayAppScreen({ savedMovies=[], onBack, onMovieAdded }) {
   const [searchKbVisible, setSearchKbVisible] = useState(false);
   const [selectedFriend, setSelectedFriend]   = useState(null);
   const [addedMovies, setAddedMovies]         = useState({});
-  const [homeToast, setHomeToast]             = useState(null);
+  const [homeToastMovie, setHomeToastMovie]   = useState(null);
   const [bannerDot, setBannerDot]             = useState(0);
+  const [shareMovie, setShareMovie]           = useState(null);
+  const [showShareSheet, setShowShareSheet]   = useState(false);
+  const [shareToast, setShareToast]           = useState(null);
+  const [closingFriend, setClosingFriend]     = useState(false);
   const bannerRef = useRef(null);
+
+  const navWhileFriend = (tabId) => {
+    setClosingFriend(true);
+    setTimeout(() => {
+      setSelectedFriend(null);
+      setClosingFriend(false);
+      setActiveTab(tabId);
+    }, 380);
+  };
 
   const handleHomeAdd = (m) => {
     if (addedMovies[m.id]) return;
     setAddedMovies(prev => ({...prev, [m.id]: true}));
-    setHomeToast(m.title);
-    setTimeout(() => setHomeToast(null), 2800);
+    setHomeToastMovie(m);
+    setTimeout(() => setHomeToastMovie(null), 2800);
   };
 
   useEffect(() => {
@@ -2003,6 +2373,7 @@ function MeliPlayAppScreen({ savedMovies=[], onBack, onMovieAdded }) {
         <FriendProfileScreen
           friend={selectedFriend}
           movies={featured}
+          forceClose={closingFriend}
           onBack={() => setSelectedFriend(null)}
         />
       )}
@@ -2047,7 +2418,7 @@ function MeliPlayAppScreen({ savedMovies=[], onBack, onMovieAdded }) {
       <div className="no-scrollbar" style={{flex:1,overflowY:'auto',paddingBottom:72}}>
 
         {/* ── Mi Perfil tab ── */}
-        {activeTab === 'perfil' && <MiPerfilView featured={featured} loadingFt={loadingFt}/>}
+        {activeTab === 'perfil' && <MiPerfilView featured={featured} loadingFt={loadingFt} onBuscar={() => setActiveTab('buscar')} onShareRequest={m => { setShareMovie(m); setShowShareSheet(true); }}/>}
 
         {/* ── Inicio tab content ── */}
         {(activeTab === 'inicio' || activeTab === 'catalogo') && <>
@@ -2066,12 +2437,17 @@ function MeliPlayAppScreen({ savedMovies=[], onBack, onMovieAdded }) {
           </div>
         ) : (
           <div ref={bannerRef} className="no-scrollbar" style={{display:'flex',gap:12,overflowX:'auto',padding:'24px 20px 4px'}}>
-            {featured.map((m,i) => {
-              const CONTACTS = [4,2,6,1,3,5,7];
-              const MATCHES  = [94,87,91,78,96,83,89];
-              const contacts = CONTACTS[i % CONTACTS.length];
-              const match    = MATCHES[i % MATCHES.length];
-              return (
+            {(() => {
+              const WATCH_COUNTS = [4,2,6,1,3,5,7];
+              const MATCHES      = [94,87,91,78,96,83,89];
+              return [...featured]
+                .map((m,i) => ({
+                  m,
+                  match:    MATCHES[i % MATCHES.length],
+                  contacts: Array(WATCH_COUNTS[i % WATCH_COUNTS.length]).fill(null),
+                }))
+                .sort((a,b) => b.match - a.match)
+                .map(({m, match, contacts}, i) => (
                 <div key={m.id} style={{flexShrink:0,width:272,height:182,borderRadius:14,
                   overflow:'hidden',position:'relative',
                   boxShadow:'var(--row-sh)',
@@ -2094,23 +2470,25 @@ function MeliPlayAppScreen({ savedMovies=[], onBack, onMovieAdded }) {
                         fontFamily:'var(--mono)',fontSize:9,fontWeight:700,color:'#1A0A05',letterSpacing:'.02em'}}>
                         {match}% match
                       </div>
-                      <div style={{display:'flex',alignItems:'center',gap:3,minWidth:0}}>
-                        <svg width="12" height="10" viewBox="0 0 14 11" fill="none" style={{flexShrink:0}}>
-                          <circle cx="5" cy="3" r="2.2" stroke="rgba(255,255,255,.78)" strokeWidth="1.3"/>
-                          <circle cx="9.5" cy="3" r="2.2" stroke="rgba(255,255,255,.78)" strokeWidth="1.3"/>
-                          <path d="M1 10.5c0-2.2 1.8-4 4-4" stroke="rgba(255,255,255,.78)" strokeWidth="1.3" strokeLinecap="round"/>
-                          <path d="M5.5 10.5c0-2.2 1.8-4 4-4s4 1.8 4 4" stroke="rgba(255,255,255,.78)" strokeWidth="1.3" strokeLinecap="round"/>
-                        </svg>
-                        <span style={{fontFamily:'var(--sans)',fontSize:9,color:'#F5F0E8',
-                          overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
-                          Visto por <b style={{fontWeight:600}}>{contacts}</b> de tus contactos
-                        </span>
-                      </div>
+                      {formatContactsLabel(contacts) && (
+                        <div style={{display:'flex',alignItems:'center',gap:3,minWidth:0}}>
+                          <svg width="12" height="10" viewBox="0 0 14 11" fill="none" style={{flexShrink:0}}>
+                            <circle cx="5" cy="3" r="2.2" stroke="rgba(255,255,255,.78)" strokeWidth="1.3"/>
+                            <circle cx="9.5" cy="3" r="2.2" stroke="rgba(255,255,255,.78)" strokeWidth="1.3"/>
+                            <path d="M1 10.5c0-2.2 1.8-4 4-4" stroke="rgba(255,255,255,.78)" strokeWidth="1.3" strokeLinecap="round"/>
+                            <path d="M5.5 10.5c0-2.2 1.8-4 4-4s4 1.8 4 4" stroke="rgba(255,255,255,.78)" strokeWidth="1.3" strokeLinecap="round"/>
+                          </svg>
+                          <span style={{fontFamily:'var(--sans)',fontSize:9,color:'#F5F0E8',
+                            overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+                            {formatContactsLabel(contacts)}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
-              );
-            })}
+                ));
+            })()}
           </div>
         )}
 
@@ -2177,6 +2555,7 @@ function MeliPlayAppScreen({ savedMovies=[], onBack, onMovieAdded }) {
                     style={{
                     flexShrink:0, width:108, borderRadius:12, overflow:'hidden',
                     boxShadow:'var(--row-sh)', cursor:'pointer',
+                    display:'flex', flexDirection:'column',
                     animation:`fadeUpIn .4s cubic-bezier(.34,1.56,.64,1) ${i*.07}s both`,
                     transition:'box-shadow .35s',
                   }}>
@@ -2229,7 +2608,7 @@ function MeliPlayAppScreen({ savedMovies=[], onBack, onMovieAdded }) {
                     {/* Friend info */}
                     <div style={{
                       background:'var(--row-bg)',padding:'8px 9px 10px',
-                      transition:'background .35s',
+                      transition:'background .35s', flex:1,
                     }}>
                       <div style={{display:'flex',alignItems:'center',gap:5,marginBottom:4}}>
                         <div style={{
@@ -2237,7 +2616,7 @@ function MeliPlayAppScreen({ savedMovies=[], onBack, onMovieAdded }) {
                           display:'flex',alignItems:'center',justifyContent:'center',
                           flexShrink:0,border:'1.5px solid var(--device-bg)',
                         }}>
-                          <span style={{fontFamily:'var(--sans)',fontSize:7,fontWeight:700,color:'var(--ink)'}}>
+                          <span style={{fontFamily:'var(--sans)',fontSize:9,fontWeight:700,color:'var(--ink)'}}>
                             {fr.initials}
                           </span>
                         </div>
@@ -2259,12 +2638,12 @@ function MeliPlayAppScreen({ savedMovies=[], onBack, onMovieAdded }) {
           )}
         </div>
 
-        {/* Para ti */}
+        {/* Según lo que viste */}
         {!loadingFt && featured.length>2 && (
           <div style={{marginTop:32,paddingBottom:8}}>
             <div style={{padding:'0 20px',marginBottom:12}}>
               <span style={{fontFamily:'var(--sans)',fontSize:16,fontWeight:700,
-                color:'var(--ink)',letterSpacing:'-.01em'}}>Para ti</span>
+                color:'var(--ink)',letterSpacing:'-.01em'}}>Según lo que viste</span>
             </div>
             <div style={{display:'flex',flexDirection:'column',gap:10,padding:'0 20px'}}>
               {featured.slice(2,5).map((m,i) => (
@@ -2283,24 +2662,40 @@ function MeliPlayAppScreen({ savedMovies=[], onBack, onMovieAdded }) {
       )}
 
       {/* Home toast */}
-      {homeToast && (
-        <div style={{position:'absolute',top:80,left:16,right:16,zIndex:30,
+      {homeToastMovie && (
+        <ConfirmationBanner movie={homeToastMovie} animate onHidden={() => setHomeToastMovie(null)}/>
+      )}
+
+      {/* Share sheet — Mi Lista context */}
+      {showShareSheet && (
+        <IOSShareSheet
+          movie={shareMovie}
+          onDismiss={msg => {
+            setShowShareSheet(false);
+            setShareMovie(null);
+            if (msg) {
+              setShareToast(msg);
+              setTimeout(() => setShareToast(null), 3000);
+            }
+          }}
+        />
+      )}
+
+      {/* Share toast */}
+      {shareToast && (
+        <div style={{position:'absolute',top:16,left:16,right:16,zIndex:310,
           animation:'slideUpFade .38s cubic-bezier(.34,1.56,.64,1) both',pointerEvents:'none'}}>
-          <div style={{background:'rgba(22,18,14,.93)',borderRadius:16,padding:'13px 16px',
-            display:'flex',alignItems:'center',gap:12,
+          <div style={{background:'rgba(22,18,14,.93)',borderRadius:16,padding:'12px 16px',
+            display:'flex',alignItems:'center',gap:10,
             boxShadow:'0 8px 32px rgba(0,0,0,.35),0 0 0 .5px rgba(255,255,255,.1)',
             backdropFilter:'blur(16px)',WebkitBackdropFilter:'blur(16px)'}}>
-            <div style={{width:32,height:32,borderRadius:8,background:TERRA,flexShrink:0,
+            <div style={{width:28,height:28,borderRadius:8,background:TERRA,flexShrink:0,
               display:'flex',alignItems:'center',justifyContent:'center'}}>
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <path d="M2 7l3.5 3.5 6.5-6.5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <path d="M2 6l3 3 5-5" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </div>
-            <div style={{flex:1}}>
-              <div style={{fontFamily:'var(--sans)',fontSize:13,fontWeight:600,color:'#fff'}}>Añadido a tu lista ✓</div>
-              <div style={{fontFamily:'var(--sans)',fontSize:11,color:'rgba(255,255,255,.82)',lineHeight:1.4,marginTop:1,
-                overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{homeToast}</div>
-            </div>
+            <span style={{fontFamily:'var(--sans)',fontSize:12,color:'#F5F0E8',lineHeight:1.4}}>{shareToast}</span>
           </div>
         </div>
       )}
@@ -2368,7 +2763,7 @@ function MeliPlayAppScreen({ savedMovies=[], onBack, onMovieAdded }) {
               </svg>
             );
             return (
-              <button key={t.id} onClick={() => setActiveTab(t.id)} style={{
+              <button key={t.id} onClick={() => selectedFriend ? navWhileFriend(t.id) : setActiveTab(t.id)} style={{
                 background: active ? 'rgba(200,82,42,.1)' : 'transparent',
                 border:'none', cursor:'pointer',
                 display:'flex',flexDirection:'column',alignItems:'center',gap:2,
@@ -2390,7 +2785,7 @@ function MeliPlayAppScreen({ savedMovies=[], onBack, onMovieAdded }) {
         </div>
 
         {/* Buscar — separate floating circle button */}
-        <button onClick={() => setActiveTab('buscar')} style={{
+        <button onClick={() => selectedFriend ? navWhileFriend('buscar') : setActiveTab('buscar')} style={{
           width:50, height:50,
           borderRadius:'50%',
           background: activeTab==='buscar' ? TERRA : 'var(--dock-bg)',
@@ -2417,6 +2812,206 @@ function MeliPlayAppScreen({ savedMovies=[], onBack, onMovieAdded }) {
 }
 
 // ── Live demo ──────────────────────────────────────────────────────────────
+function IOSShareSheet({ onDismiss, movie = null }) {
+  const { isDark } = useTheme();
+
+  const INTERNAL_CONTACTS = [
+    { name: 'Mamá',   initials: 'MA', color: '#E8916C' },
+    { name: 'Carlos', initials: 'CA', color: '#5DBA47' },
+    { name: 'Ana',    initials: 'AN', color: '#4A90E2' },
+    { name: 'Luis',   initials: 'LU', color: '#9B59B6' },
+    { name: 'Jorge',  initials: 'JO', color: '#E67E22' },
+  ];
+
+  const EXTERNAL_APPS = [
+    { name: 'WhatsApp',  bg: '#25D366', glyph: '💬' },
+    { name: 'Messages',  bg: '#5DBA47', glyph: '✉️' },
+    { name: 'Instagram', bg: '#E1306C', glyph: '📸' },
+    { name: 'Más',       bg: '#8E8E93', glyph: '···' },
+  ];
+
+  const bg      = isDark ? 'rgba(28,24,20,.97)' : 'rgba(242,242,247,.98)';
+  const textPri = isDark ? '#F5F0E8' : '#0F0F0F';
+  const textSec = isDark ? 'rgba(245,240,232,.5)' : 'rgba(0,0,0,.45)';
+  const divider = isDark ? '0.5px solid rgba(255,255,255,.08)' : '0.5px solid rgba(0,0,0,.1)';
+  const sectionLabelStyle = {
+    fontFamily:'var(--sans)', fontSize:10, fontWeight:700,
+    color: TERRA, letterSpacing:'.08em', textTransform:'uppercase',
+    padding:'12px 20px 8px',
+  };
+
+  return (
+    <div style={{position:'absolute',inset:0,zIndex:300}} onClick={onDismiss}>
+      {/* Scrim */}
+      <div style={{
+        position:'absolute', inset:0,
+        background:'rgba(0,0,0,.45)',
+        backdropFilter:'blur(4px)',
+        WebkitBackdropFilter:'blur(4px)',
+      }}/>
+
+      {/* Sheet */}
+      <div onClick={e => e.stopPropagation()} style={{
+        position:'absolute', bottom:0, left:0, right:0,
+        background: bg,
+        borderTopLeftRadius:20, borderTopRightRadius:20,
+        paddingBottom:34,
+        animation:'sheetUp .42s cubic-bezier(.32,.72,0,1)',
+        boxShadow:'0 -4px 32px rgba(0,0,0,.3)',
+      }}>
+
+        {/* Handle */}
+        <div style={{display:'flex',justifyContent:'center',padding:'10px 0 6px'}}>
+          <div style={{width:36,height:5,borderRadius:3,
+            background: isDark ? 'rgba(255,255,255,.2)' : 'rgba(0,0,0,.18)'}}/>
+        </div>
+
+        {/* Header — movie context */}
+        <div style={{
+          padding:'4px 20px 14px',
+          borderBottom: divider,
+          display:'flex', alignItems:'center', gap:12,
+        }}>
+          {movie && (
+            <Poster movie={movie} size={40} radius={6}/>
+          )}
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{fontFamily:'var(--sans)',fontSize:13,fontWeight:600,
+              color:textPri,marginBottom:2,
+              overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+              {movie ? movie.title : 'Invita a familia y amigos'}
+            </div>
+            <div style={{fontFamily:'var(--sans)',fontSize:11,color:textSec}}>
+              {movie ? 'Compartir en MeliPlay' : 'Unite a MeliPlay y vean juntos'}
+            </div>
+          </div>
+        </div>
+
+        {/* SECTION 1 — Internal: MeliPlay contacts */}
+        <div>
+          <div style={sectionLabelStyle}>En MeliPlay</div>
+          <div style={{
+            display:'flex', gap:16, padding:'0 20px 16px',
+            overflowX:'auto', borderBottom: divider,
+          }}>
+            {INTERNAL_CONTACTS.map((c,i) => (
+              <div key={i}
+                onClick={() => onDismiss(`Compartido con ${c.name} ✓ — Aparecerá en su feed`)}
+                style={{
+                  display:'flex',flexDirection:'column',alignItems:'center',
+                  gap:6,flexShrink:0,cursor:'pointer',
+                  animation:`fadeUpIn .3s cubic-bezier(.34,1.56,.64,1) ${i*.05}s both`,
+                }}>
+                <div style={{
+                  width:52,height:52,borderRadius:26,background:c.color,
+                  display:'flex',alignItems:'center',justifyContent:'center',
+                  border:`2px solid ${TERRA}`,
+                }}>
+                  <span style={{fontFamily:'var(--sans)',fontSize:16,
+                    fontWeight:600,color:'#fff'}}>
+                    {c.initials}
+                  </span>
+                </div>
+                <span style={{fontFamily:'var(--sans)',fontSize:10,
+                  color:textSec,textAlign:'center',maxWidth:52,
+                  overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+                  {c.name}
+                </span>
+                {/* MeliPlay indicator dot */}
+                <div style={{
+                  width:6,height:6,borderRadius:3,
+                  background:TERRA,marginTop:-4,
+                }}/>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* SECTION 2 — External: invite via other apps */}
+        <div>
+          <div style={sectionLabelStyle}>Invitar a MeliPlay</div>
+          <div style={{
+            display:'flex', gap:16, padding:'0 20px 16px',
+            overflowX:'auto', borderBottom: divider,
+          }}>
+            {EXTERNAL_APPS.map((a,i) => (
+              <div key={i}
+                onClick={() => onDismiss(`Link copiado ✓ — Pegalo en ${a.name} para invitar`)}
+                style={{
+                  display:'flex',flexDirection:'column',alignItems:'center',
+                  gap:6,flexShrink:0,cursor:'pointer',
+                  animation:`fadeUpIn .3s cubic-bezier(.34,1.56,.64,1) ${(i+5)*.05}s both`,
+                }}>
+                <div style={{
+                  width:52,height:52,borderRadius:13,background:a.bg,
+                  display:'flex',alignItems:'center',justifyContent:'center',
+                  fontSize:22,
+                }}>
+                  {a.glyph}
+                </div>
+                <span style={{fontFamily:'var(--sans)',fontSize:10,
+                  color:textSec,textAlign:'center'}}>
+                  {a.name}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Copy link row */}
+        <div
+          onClick={() => onDismiss('Link copiado ✓ — Quien lo abra descargará MeliPlay y verá el contenido directo')}
+          style={{
+            display:'flex', alignItems:'center', gap:14,
+            padding:'14px 20px', cursor:'pointer',
+            borderBottom: divider,
+          }}>
+          <div style={{
+            width:36,height:36,borderRadius:10,
+            background: isDark ? 'rgba(255,255,255,.1)' : 'rgba(0,0,0,.08)',
+            display:'flex',alignItems:'center',justifyContent:'center',
+          }}>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M6.5 9.5a3.5 3.5 0 005 0l2-2a3.5 3.5 0 00-5-5L7.5 3.5"
+                stroke={TERRA} strokeWidth="1.6" strokeLinecap="round"/>
+              <path d="M9.5 6.5a3.5 3.5 0 00-5 0l-2 2a3.5 3.5 0 005 5l1-1"
+                stroke={TERRA} strokeWidth="1.6" strokeLinecap="round"/>
+            </svg>
+          </div>
+          <div style={{flex:1}}>
+            <div style={{fontFamily:'var(--sans)',fontSize:14,
+              fontWeight:500,color:textPri}}>
+              Copiar link
+            </div>
+            <div style={{fontFamily:'var(--sans)',fontSize:11,
+              color:textSec,marginTop:1}}>
+              Quien lo abra descargará MeliPlay
+            </div>
+          </div>
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M3 7h8M7 3l4 4-4 4"
+              stroke={textSec} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </div>
+
+        {/* Cancel */}
+        <div onClick={() => onDismiss(null)} style={{
+          margin:'8px 16px 0', padding:'15px',
+          textAlign:'center',
+          background: isDark ? 'rgba(255,255,255,.08)' : 'rgba(255,255,255,.95)',
+          borderRadius:14, cursor:'pointer',
+        }}>
+          <span style={{fontFamily:'var(--sans)',fontSize:17,
+            fontWeight:600,color:TERRA}}>
+            Cancelar
+          </span>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
 function LiveDemo() {
   const [state, setState]       = useState('home');
   const [savedMovie, setSavedMovie]   = useState(null);
@@ -2424,6 +3019,7 @@ function LiveDemo() {
   const [uiStyle, setUIStyle]   = useState('flat');
   const [mode, setMode]         = useState('dark');
   const [compartirToast, setCompartirToast] = useState(false);
+  const [showShareSheet, setShowShareSheet] = useState(false);
   const timeouts   = useRef([]);
   const prevStateRef = useRef('home');
 
@@ -2468,7 +3064,7 @@ function LiveDemo() {
                   <HomeScreen
                     withBadge={state==='home-updated'} shimmer={state==='home-updated'}
                     savedMovie={savedMovie}
-                    onWidgetTap={action => { if (action==='buscar') setState('sheet'); else if (action==='compartir') showCompartirToast(); }}
+                    onWidgetTap={action => { if (action==='buscar') setState('sheet'); else if (action==='compartir') setShowShareSheet(true); }}
                     onMeliPlayTap={() => { prevStateRef.current = state; setState('meliplay-home'); }}
                   />
                 </div>
@@ -2497,6 +3093,16 @@ function LiveDemo() {
                   <Poster movie={savedMovie} size={56} radius={6} withGlow/>
                 </div>
               )}
+              {/* Share sheet */}
+              {showShareSheet && (
+                <IOSShareSheet onDismiss={msg => {
+                  setShowShareSheet(false);
+                  if (msg) {
+                    setCompartirToast(true);
+                    setTimeout(() => setCompartirToast(false), 2800);
+                  }
+                }}/>
+              )}
               {/* Compartir toast */}
               {compartirToast && (
                 <div style={{
@@ -2504,30 +3110,20 @@ function LiveDemo() {
                   animation:'slideUpFade .38s cubic-bezier(.34,1.56,.64,1) both',
                 }}>
                   <div style={{
-                    background:'rgba(22,18,14,.93)',
-                    borderRadius:16, padding:'14px 18px',
+                    background:'rgba(22,18,14,.93)', borderRadius:16, padding:'14px 18px',
                     display:'flex', alignItems:'center', gap:12,
                     boxShadow:'0 8px 32px rgba(0,0,0,.35), 0 0 0 .5px rgba(255,255,255,.1)',
                     backdropFilter:'blur(16px)', WebkitBackdropFilter:'blur(16px)',
                   }}>
-                    <div style={{
-                      width:36, height:36, borderRadius:10, background:TERRA, flexShrink:0,
-                      display:'flex', alignItems:'center', justifyContent:'center',
-                    }}>
+                    <div style={{width:36,height:36,borderRadius:10,background:TERRA,flexShrink:0,
+                      display:'flex',alignItems:'center',justifyContent:'center'}}>
                       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                        <circle cx="13" cy="3" r="2" fill="#fff"/>
-                        <circle cx="13" cy="13" r="2" fill="#fff"/>
-                        <circle cx="3"  cy="8"  r="2" fill="#fff"/>
-                        <path d="M4.8 7L10.8 4M4.8 9L10.8 12" stroke="#fff" strokeWidth="1.5" strokeLinecap="round"/>
+                        <path d="M2 8l4 4 8-8" stroke="#fff" strokeWidth="2"
+                          strokeLinecap="round" strokeLinejoin="round"/>
                       </svg>
                     </div>
-                    <div style={{flex:1}}>
-                      <div style={{fontFamily:'var(--sans)',fontSize:13,fontWeight:600,color:'#fff',letterSpacing:'-.01em',marginBottom:3}}>
-                        Link copiado ✓
-                      </div>
-                      <div style={{fontFamily:'var(--sans)',fontSize:12,color:'rgba(255,255,255,.72)',lineHeight:1.4}}>
-                        Ya lo puedes compartir con tu familia y amigos
-                      </div>
+                    <div style={{fontFamily:'var(--sans)',fontSize:13,fontWeight:600,color:'#fff'}}>
+                      Invitación enviada ✓
                     </div>
                   </div>
                 </div>
